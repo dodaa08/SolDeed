@@ -5,9 +5,9 @@ import JobListings from "@/app/components/landing/JobListings";
 export default function LandingPage(){
     return (
         <div className="bg-white min-h-screen w-full">
-              <div>
+              {/* <div>
                 <Header />
-              </div>
+              </div> */}
               <div>
                 <Hero />
               </div>

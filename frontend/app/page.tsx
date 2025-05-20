@@ -1,5 +1,5 @@
 "use client"
-import LandingPage from "./pages/Landing/page"
+import LandingPage from "./(pages)/Landing/page"
 
 
 export default function(){
