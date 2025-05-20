@@ -40,15 +40,15 @@ export default function Header() {
                     <Link href="/jobs" className="text-gray-700 hover:text-blue-600 font-medium">
                         Browse Jobs
                     </Link>
-                    <Link href="/company-reviews" className="text-gray-700 hover:text-blue-600 font-medium">
+                    <div className="text-gray-700 hover:text-blue-600 font-medium">
                         Company Reviews
-                    </Link>
-                    <Link href="/salary-guide" className="text-gray-700 hover:text-blue-600 font-medium">
+                    </div>
+                    <div className="text-gray-700 hover:text-blue-600 font-medium">
                         Salary Guide
-                    </Link>
-                    <Link href="/post-job" className="text-gray-700 hover:text-blue-600 font-medium">
+                    </div>
+                    <div className="text-gray-700 hover:text-blue-600 font-medium">
                         Post a Job
-                    </Link>
+                    </div>
                 </nav>
 
                 {/* Wallet connect button and mobile menu toggle */}
