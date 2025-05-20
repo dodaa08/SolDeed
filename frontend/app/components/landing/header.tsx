@@ -40,13 +40,13 @@ export default function Header() {
                     <Link href="/jobs" className="text-gray-700 hover:text-blue-600 font-medium">
                         Browse Jobs
                     </Link>
-                    <div className="text-gray-700 hover:text-blue-600 font-medium">
+                    <div className="text-gray-700 cursor-pointer hover:text-blue-600 font-medium">
                         Company Reviews
                     </div>
-                    <div className="text-gray-700 hover:text-blue-600 font-medium">
+                    <div className="text-gray-700 cursor-pointer hover:text-blue-600 font-medium">
                         Salary Guide
                     </div>
-                    <div className="text-gray-700 hover:text-blue-600 font-medium">
+                    <div className="text-gray-700 cursor-pointer hover:text-blue-600 font-medium">
                         Post a Job
                     </div>
                 </nav>
