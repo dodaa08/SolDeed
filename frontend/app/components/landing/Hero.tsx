@@ -1,10 +1,27 @@
 "use client";
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent, useMemo } from 'react';
 import { useJobs, UseJobsResult } from '@/app/hooks/useJobs';
 import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
+
+// Simple debounce function
+const useDebounce = <T,>(value: T, delay: number): T => {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+  
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+  
+    return debouncedValue;
+};
 
 interface HeroProps {
     jobsState: UseJobsResult;
@@ -24,18 +41,29 @@ export default function Hero({ jobsState }: HeroProps) {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+    const [selectedLocationSuggestionIndex, setSelectedLocationSuggestionIndex] = useState(-1);
+    
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const locationSuggestionsRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const locationInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     
-    // Mount component on client-side to prevent hydration mismatch
+    // Apply debounce to search terms
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
+    const debouncedLocationTerm = useDebounce(locationTerm, 300);
+    
+    // Mount component on client-side and initialize
     useEffect(() => {
         setMounted(true);
-    }, []);
+        
+        if (allJobs?.length) {
+            console.log(`Found ${allJobs.length} jobs for suggestions`);
+        }
+    }, [allJobs]);
 
-    // Sync the search terms from the useJobs hook when they change
+    // Sync search terms from useJobs hook
     useEffect(() => {
         if (searchTitle !== searchTerm) {
             setSearchTerm(searchTitle);
@@ -45,95 +73,112 @@ export default function Hero({ jobsState }: HeroProps) {
         }
     }, [searchTitle, searchLocation]);
     
-    // Generate suggestions based on search term
+    // Generate job suggestions based on debounced search term
     useEffect(() => {
-        if (!searchTerm || searchTerm.length < 2 || !allJobs?.length) {
+        if (!debouncedSearchTerm || !allJobs?.length) {
             setSuggestions([]);
             return;
         }
         
-        const term = searchTerm.toLowerCase().trim();
+        const term = debouncedSearchTerm.toLowerCase().trim();
         
         try {
-            // Extract titles and companies that match
+            // Get suggestions from jobs that match the search term
+            const jobSuggestions = [];
+            
+            // Add matching job titles
             const matchingTitles = allJobs
                 .filter(job => job.title.toLowerCase().includes(term))
                 .map(job => job.title);
-                
+            jobSuggestions.push(...matchingTitles);
+            
+            // Add matching company names
             const matchingCompanies = allJobs
                 .filter(job => job.organization.name.toLowerCase().includes(term))
                 .map(job => job.organization.name);
+            jobSuggestions.push(...matchingCompanies);
             
-            // Combine and remove duplicates
-            const allSuggestions = Array.from(new Set([
-                ...matchingTitles,
-                ...matchingCompanies
-            ]));
-            
-            // Sort by relevance (starts with term first)
-            const sortedSuggestions = allSuggestions.sort((a, b) => {
+            // Remove duplicates and sort
+            const uniqueSuggestions = Array.from(new Set(jobSuggestions));
+            const sortedSuggestions = uniqueSuggestions.sort((a, b) => {
+                // Prioritize results that start with the search term
                 const aStartsWith = a.toLowerCase().startsWith(term) ? -1 : 0;
                 const bStartsWith = b.toLowerCase().startsWith(term) ? -1 : 0;
                 return aStartsWith - bStartsWith;
             });
             
-            // Limit to 8 suggestions
+            // Reset selected index when suggestions change
+            setSelectedSuggestionIndex(-1);
             setSuggestions(sortedSuggestions.slice(0, 8));
         } catch (error) {
-            console.error("Error generating suggestions:", error);
+            console.error("Error generating job suggestions:", error);
             setSuggestions([]);
         }
-    }, [searchTerm, allJobs]);
+    }, [debouncedSearchTerm, allJobs]);
 
-    // Generate location suggestions based on location term
+    // Generate location suggestions based on debounced location term
     useEffect(() => {
-        if (!locationTerm || locationTerm.length < 2 || !allJobs?.length) {
+        if (!debouncedLocationTerm || !allJobs?.length) {
             setLocationSuggestions([]);
             return;
         }
         
-        const term = locationTerm.toLowerCase().trim();
+        const term = debouncedLocationTerm.toLowerCase().trim();
         
         try {
-            // Extract locations that match
+            // Extract all locations from jobs
             const allLocations = allJobs
                 .flatMap(job => job.locations || [])
                 .filter(Boolean);
-                
-            // Filter and remove duplicates
+            
+            // Filter locations that match the search term
             const matchingLocations = Array.from(new Set(
                 allLocations.filter(loc => 
                     loc.toLowerCase().includes(term)
                 )
             ));
             
-            // Sort by relevance (starts with term first)
+            // Sort by relevance
             const sortedLocations = matchingLocations.sort((a, b) => {
                 const aStartsWith = a.toLowerCase().startsWith(term) ? -1 : 0;
                 const bStartsWith = b.toLowerCase().startsWith(term) ? -1 : 0;
                 return aStartsWith - bStartsWith;
             });
             
-            // Limit to 8 suggestions
-            setLocationSuggestions(sortedLocations.slice(0, 8));
+            let finalSuggestions = sortedLocations.slice(0, 10);
+
+            // If no job locations found, add some sample locations
+            if (sortedLocations.length === 0) {
+                const sampleLocations = [
+                    "New York, NY",
+                    "San Francisco, CA",
+                    "Remote",
+                    "London, UK",
+                    "Berlin, Germany",
+                    "Bangalore, India",
+                    "Singapore",
+                    "Tokyo, Japan"
+                ].filter(loc => loc.toLowerCase().includes(term));
+                
+                finalSuggestions = sampleLocations.slice(0, 10);
+            }
+
+            // Reset selected index when suggestions change
+            setSelectedLocationSuggestionIndex(-1);
+            setLocationSuggestions(finalSuggestions);
         } catch (error) {
             console.error("Error generating location suggestions:", error);
             setLocationSuggestions([]);
         }
-    }, [locationTerm, allJobs]);
+    }, [debouncedLocationTerm, allJobs]);
     
-    // Handle clicks outside suggestions
+    // Handle clicks outside suggestion dropdowns
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            // Job suggestions
             if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
-                inputRef.current && !inputRef.current.contains(event.target as Node)) {
-                setShowSuggestions(false);
-            }
-            
-            // Location suggestions
-            if (locationSuggestionsRef.current && !locationSuggestionsRef.current.contains(event.target as Node) &&
+                inputRef.current && !inputRef.current.contains(event.target as Node) &&
                 locationInputRef.current && !locationInputRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
                 setShowLocationSuggestions(false);
             }
         }
@@ -144,28 +189,79 @@ export default function Hero({ jobsState }: HeroProps) {
         };
     }, []);
     
+    // Handle keyboard navigation for job search suggestions
+    const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        // Handle Enter key
+        if (e.key === 'Enter') {
+            if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestions.length) {
+                // If a suggestion is selected, use that
+                handleSuggestionClick(suggestions[selectedSuggestionIndex]);
+            } else {
+                // Otherwise just search with current input
+                handleSearch();
+            }
+            return;
+        }
+        
+        // Handle arrow keys for navigation
+        if (showSuggestions && suggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedSuggestionIndex(prev => 
+                    prev < suggestions.length - 1 ? prev + 1 : prev
+                );
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+            } else if (e.key === 'Escape') {
+                setShowSuggestions(false);
+            }
+        }
+    };
+    
+    // Handle keyboard navigation for location suggestions
+    const handleLocationKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        // Handle Enter key
+        if (e.key === 'Enter') {
+            if (selectedLocationSuggestionIndex >= 0 && selectedLocationSuggestionIndex < locationSuggestions.length) {
+                // If a suggestion is selected, use that
+                handleLocationSuggestionClick(locationSuggestions[selectedLocationSuggestionIndex]);
+            } else {
+                // Otherwise just search with current input
+                handleSearch();
+            }
+            return;
+        }
+        
+        // Handle arrow keys for navigation
+        if (showLocationSuggestions && locationSuggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedLocationSuggestionIndex(prev => 
+                    prev < locationSuggestions.length - 1 ? prev + 1 : prev
+                );
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedLocationSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+            } else if (e.key === 'Escape') {
+                setShowLocationSuggestions(false);
+            }
+        }
+    };
+    
+    // Handle search submission
     const handleSearch = () => {
-        // Show searching indicator
         setIsSearching(true);
-        
-        // Perform search with separate title and location
         searchJobs(searchTerm, locationTerm);
-        
-        // Hide suggestions
         setShowSuggestions(false);
         setShowLocationSuggestions(false);
         
-        // Scroll to job listings section with a smooth effect
         setTimeout(() => {
             const listingsSection = document.getElementById('job-listings');
             if (listingsSection) {
-                // Add highlighted class to job listings section temporarily
                 listingsSection.classList.add('search-highlight');
-                
-                // Scroll to the job listings
                 listingsSection.scrollIntoView({ behavior: 'smooth' });
                 
-                // Remove the highlight after animation
                 setTimeout(() => {
                     setIsSearching(false);
                     listingsSection.classList.remove('search-highlight');
@@ -176,42 +272,35 @@ export default function Hero({ jobsState }: HeroProps) {
         }, 100);
     };
     
+    // Handle job suggestion click
     const handleSuggestionClick = (suggestion: string) => {
-        // Set the search term and immediately perform search
         setSearchTerm(suggestion);
         setShowSuggestions(false);
         
-        // Small delay to ensure state updates before search
         setTimeout(() => {
             handleSearch();
         }, 10);
     };
     
+    // Handle location suggestion click
     const handleLocationSuggestionClick = (suggestion: string) => {
-        // Set the location term and immediately perform search
         setLocationTerm(suggestion);
         setShowLocationSuggestions(false);
         
-        // Small delay to ensure state updates before search
         setTimeout(() => {
             handleSearch();
         }, 10);
     };
     
-    // Redirect to jobs page with search params
+    // Redirect to jobs page
     const redirectToJobsPage = () => {
         if (searchTerm || locationTerm) {
-            // First perform the search to update the state
             searchJobs(searchTerm, locationTerm);
-            
-            // Then navigate to the jobs page
-            router.push('/jobs');
-        } else {
-            router.push('/jobs');
         }
+        router.push('/jobs');
     };
 
-    // Conditional styling based on theme
+    // Theme-based styling
     const heroBackgroundClass = mounted && isDark 
         ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" 
         : "bg-gradient-to-br from-white via-blue-50 to-white";
@@ -239,6 +328,10 @@ export default function Hero({ jobsState }: HeroProps) {
     const suggestionItemClass = mounted && isDark
         ? "hover:bg-gray-700 text-gray-200"
         : "hover:bg-blue-50 text-gray-800";
+    
+    const selectedSuggestionClass = mounted && isDark
+        ? "bg-gray-700"
+        : "bg-blue-50";
         
     const searchButtonClass = mounted && isDark
         ? "bg-blue-500 hover:bg-blue-600 text-white"
@@ -273,40 +366,21 @@ export default function Hero({ jobsState }: HeroProps) {
                                 </div>
                                 <input
                                     ref={inputRef}
+                                    id="job-search-input"
                                     type="text"
                                     className={`block w-full pl-14 pr-4 py-5 text-lg border-none focus:ring-0 focus:outline-none ${inputBgClass}`}
                                     placeholder="Job title, keywords, or company"
                                     value={searchTerm}
                                     onChange={(e) => {
                                         setSearchTerm(e.target.value);
-                                        setShowSuggestions(e.target.value.length >= 2);
+                                        setShowSuggestions(true);
                                     }}
-                                    onFocus={() => setShowSuggestions(searchTerm.length >= 2)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                    onFocus={() => setShowSuggestions(true)}
+                                    onKeyDown={handleSearchKeyDown}
+                                    autoComplete="off"
                                 />
                                 
-                                {/* Suggestions dropdown */}
-                                {showSuggestions && suggestions.length > 0 && (
-                                    <div 
-                                        ref={suggestionsRef}
-                                        className={`absolute z-50 w-full left-0 top-full mt-1 rounded-md shadow-lg border max-h-80 overflow-y-auto ${suggestionsBgClass}`}
-                                    >
-                                        <ul className="py-1">
-                                            {suggestions.map((suggestion, index) => (
-                                                <li 
-                                                    key={index}
-                                                    className={`px-4 py-2 cursor-pointer flex items-center ${suggestionItemClass}`}
-                                                    onClick={() => handleSuggestionClick(suggestion)}
-                                                >
-                                                    <svg className="h-4 w-4 text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                                                    </svg>
-                                                    <span>{suggestion}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                {/* Remove the individual job suggestions dropdown */}
                             </div>
                         </div>
                         <div className="md:w-52 md:border-l border-gray-200">
@@ -318,40 +392,21 @@ export default function Hero({ jobsState }: HeroProps) {
                                 </div>
                                 <input
                                     ref={locationInputRef}
+                                    id="location-input"
                                     type="text"
                                     className={`block w-full pl-14 pr-4 py-5 text-lg border-none md:border-l border-gray-200 focus:ring-0 focus:outline-none ${inputBgClass}`}
                                     placeholder="Location"
                                     value={locationTerm}
                                     onChange={(e) => {
                                         setLocationTerm(e.target.value);
-                                        setShowLocationSuggestions(e.target.value.length >= 2);
+                                        setShowLocationSuggestions(true);
                                     }}
-                                    onFocus={() => setShowLocationSuggestions(locationTerm.length >= 2)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                    onFocus={() => setShowLocationSuggestions(true)}
+                                    onKeyDown={handleLocationKeyDown}
+                                    autoComplete="off"
                                 />
                                 
-                                {/* Location suggestions dropdown */}
-                                {showLocationSuggestions && locationSuggestions.length > 0 && (
-                                    <div 
-                                        ref={locationSuggestionsRef}
-                                        className={`absolute z-50 w-full left-0 top-full mt-1 rounded-md shadow-lg border max-h-80 overflow-y-auto ${suggestionsBgClass}`}
-                                    >
-                                        <ul className="py-1">
-                                            {locationSuggestions.map((suggestion, index) => (
-                                                <li 
-                                                    key={index}
-                                                    className={`px-4 py-2 cursor-pointer flex items-center ${suggestionItemClass}`}
-                                                    onClick={() => handleLocationSuggestionClick(suggestion)}
-                                                >
-                                                    <svg className="h-4 w-4 text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                                    </svg>
-                                                    <span>{suggestion}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                {/* Remove the individual location suggestions dropdown */}
                             </div>
                         </div>
                         <button 
@@ -373,6 +428,60 @@ export default function Hero({ jobsState }: HeroProps) {
                         </button>
                     </div>
                 </div>
+                
+                {/* Add Combined Suggestions Panel */}
+                {(showSuggestions && suggestions.length > 0) || (showLocationSuggestions && locationSuggestions.length > 0) ? (
+                    <div 
+                        ref={suggestionsRef}
+                        className={`relative z-50 w-full mt-1 mb-6 rounded-lg shadow-lg border max-w-5xl mx-auto ${suggestionsBgClass}`}
+                    >
+                        {showSuggestions && suggestions.length > 0 && (
+                            <div>
+                                <h4 className={`px-4 py-2 text-sm font-medium ${mounted && isDark ? "text-gray-300" : "text-gray-500"} border-b border-${mounted && isDark ? "gray-700" : "gray-200"}`}>
+                                    Job Suggestions
+                                </h4>
+                                <ul className="py-2">
+                                    {suggestions.map((suggestion, index) => (
+                                        <li 
+                                            key={index}
+                                            className={`px-5 py-3 cursor-pointer flex items-center ${index === selectedSuggestionIndex ? selectedSuggestionClass : ''} ${suggestionItemClass}`}
+                                            onClick={() => handleSuggestionClick(suggestion)}
+                                            onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                                        >
+                                            <svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                            </svg>
+                                            <span className="font-medium">{suggestion}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                        
+                        {showLocationSuggestions && locationSuggestions.length > 0 && (
+                            <div className={showSuggestions && suggestions.length > 0 ? `border-t border-${mounted && isDark ? "gray-700" : "gray-200"}` : ""}>
+                                <h4 className={`px-4 py-2 text-sm font-medium ${mounted && isDark ? "text-gray-300" : "text-gray-500"} ${showSuggestions && suggestions.length > 0 ? "" : `border-b border-${mounted && isDark ? "gray-700" : "gray-200"}`}`}>
+                                    Location Suggestions
+                                </h4>
+                                <ul className="py-2">
+                                    {locationSuggestions.map((suggestion, index) => (
+                                        <li 
+                                            key={index}
+                                            className={`px-5 py-3 cursor-pointer flex items-center ${index === selectedLocationSuggestionIndex ? selectedSuggestionClass : ''} ${suggestionItemClass}`}
+                                            onClick={() => handleLocationSuggestionClick(suggestion)}
+                                            onMouseEnter={() => setSelectedLocationSuggestionIndex(index)}
+                                        >
+                                            <svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                            </svg>
+                                            <span className="font-medium">{suggestion}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                ) : null}
                 
                 <div className="text-center">
                     <button 

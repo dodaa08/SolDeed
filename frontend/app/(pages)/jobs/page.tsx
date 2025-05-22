@@ -1,20 +1,50 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { useJobs } from '@/app/hooks/useJobs';
 import { JobCard } from '@/app/components/jobs/JobCard';
 import { ConnectWalletBanner } from '@/app/components/jobs/ConnectWalletBanner';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useTheme } from "next-themes";
 
+// Simple debounce function
+const useDebounce = <T,>(value: T, delay: number): T => {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+  
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+  
+    return debouncedValue;
+};
+
 export default function JobsPage() {
     const [showConnectMessage, setShowConnectMessage] = useState(false);
     const [searchTitle, setSearchTitle] = useState('');
     const [searchLocation, setSearchLocation] = useState('');
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+    const [selectedLocationSuggestionIndex, setSelectedLocationSuggestionIndex] = useState(-1);
     const [currentPage, setCurrentPage] = useState(1);
     const [jobsPerPage] = useState(10);
     const { connected } = useWallet();
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const locationInputRef = useRef<HTMLInputElement>(null);
+    const suggestionsRef = useRef<HTMLDivElement>(null);
+    const locationSuggestionsRef = useRef<HTMLDivElement>(null);
+    
+    // Apply debounce to search terms
+    const debouncedSearchTerm = useDebounce(searchTitle, 300);
+    const debouncedLocationTerm = useDebounce(searchLocation, 300);
     
     // Theme handling
     const { systemTheme, theme } = useTheme();
@@ -24,6 +54,7 @@ export default function JobsPage() {
     const { 
         jobs,
         filteredJobs,
+        allJobs,
         isLoading,
         error,
         searchJobs: searchJobsHook,
@@ -53,7 +84,186 @@ export default function JobsPage() {
     const paginationInactiveClass = isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-700 hover:bg-blue-50";
     const paginationDisabledClass = isDark ? "text-gray-700 cursor-not-allowed" : "text-gray-300 cursor-not-allowed";
     const paginationPreviewClass = isDark ? "bg-gray-800 text-gray-500" : "bg-gray-100 text-gray-400";
+    const suggestionsBgClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
+    const suggestionItemClass = isDark ? "hover:bg-gray-700 text-gray-200" : "hover:bg-blue-50 text-gray-800";
+    const selectedSuggestionClass = isDark ? "bg-gray-700" : "bg-blue-50";
     
+    // Generate job suggestions based on debounced search term
+    useEffect(() => {
+        if (!debouncedSearchTerm || !allJobs?.length) {
+            setSuggestions([]);
+            return;
+        }
+        
+        const term = debouncedSearchTerm.toLowerCase().trim();
+        
+        try {
+            // Get suggestions from jobs that match the search term
+            const jobSuggestions = [];
+            
+            // Add matching job titles
+            const matchingTitles = allJobs
+                .filter(job => job.title.toLowerCase().includes(term))
+                .map(job => job.title);
+            jobSuggestions.push(...matchingTitles);
+            
+            // Add matching company names
+            const matchingCompanies = allJobs
+                .filter(job => job.organization.name.toLowerCase().includes(term))
+                .map(job => job.organization.name);
+            jobSuggestions.push(...matchingCompanies);
+            
+            // Remove duplicates and sort
+            const uniqueSuggestions = Array.from(new Set(jobSuggestions));
+            const sortedSuggestions = uniqueSuggestions.sort((a, b) => {
+                // Prioritize results that start with the search term
+                const aStartsWith = a.toLowerCase().startsWith(term) ? -1 : 0;
+                const bStartsWith = b.toLowerCase().startsWith(term) ? -1 : 0;
+                return aStartsWith - bStartsWith;
+            });
+            
+            // Reset selected index when suggestions change
+            setSelectedSuggestionIndex(-1);
+            setSuggestions(sortedSuggestions.slice(0, 8));
+        } catch (error) {
+            console.error("Error generating job suggestions:", error);
+            setSuggestions([]);
+        }
+    }, [debouncedSearchTerm, allJobs]);
+    
+    // Generate location suggestions based on debounced location term
+    useEffect(() => {
+        if (!debouncedLocationTerm || !allJobs?.length) {
+            setLocationSuggestions([]);
+            return;
+        }
+        
+        const term = debouncedLocationTerm.toLowerCase().trim();
+        
+        try {
+            // Extract all locations from jobs
+            const allLocations = allJobs
+                .flatMap(job => job.locations || [])
+                .filter(Boolean);
+            
+            // Filter locations that match the search term
+            const matchingLocations = Array.from(new Set(
+                allLocations.filter(loc => 
+                    loc.toLowerCase().includes(term)
+                )
+            ));
+            
+            // Sort by relevance
+            const sortedLocations = matchingLocations.sort((a, b) => {
+                const aStartsWith = a.toLowerCase().startsWith(term) ? -1 : 0;
+                const bStartsWith = b.toLowerCase().startsWith(term) ? -1 : 0;
+                return aStartsWith - bStartsWith;
+            });
+            
+            let finalSuggestions = sortedLocations.slice(0, 10);
+
+            // If no job locations found, add some sample locations
+            if (sortedLocations.length === 0) {
+                const sampleLocations = [
+                    "New York, NY",
+                    "San Francisco, CA",
+                    "Remote",
+                    "London, UK",
+                    "Berlin, Germany",
+                    "Bangalore, India",
+                    "Singapore",
+                    "Tokyo, Japan"
+                ].filter(loc => loc.toLowerCase().includes(term));
+                
+                finalSuggestions = sampleLocations.slice(0, 10);
+            }
+            
+            // Reset selected index when suggestions change
+            setSelectedLocationSuggestionIndex(-1);
+            setLocationSuggestions(finalSuggestions);
+        } catch (error) {
+            console.error("Error generating location suggestions:", error);
+            setLocationSuggestions([]);
+        }
+    }, [debouncedLocationTerm, allJobs]);
+    
+    // Handle clicks outside suggestion dropdowns
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
+                searchInputRef.current && !searchInputRef.current.contains(event.target as Node) &&
+                locationInputRef.current && !locationInputRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+                setShowLocationSuggestions(false);
+            }
+        }
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+    
+    // Handle keyboard navigation for job search suggestions
+    const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        // Handle Enter key
+        if (e.key === 'Enter') {
+            if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestions.length) {
+                // If a suggestion is selected, use that
+                handleSuggestionClick(suggestions[selectedSuggestionIndex]);
+            } else {
+                // Otherwise just search with current input
+                handleSearch();
+            }
+            return;
+        }
+        
+        // Handle arrow keys for navigation
+        if (showSuggestions && suggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedSuggestionIndex(prev => 
+                    prev < suggestions.length - 1 ? prev + 1 : prev
+                );
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+            } else if (e.key === 'Escape') {
+                setShowSuggestions(false);
+            }
+        }
+    };
+    
+    // Handle keyboard navigation for location suggestions
+    const handleLocationKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        // Handle Enter key
+        if (e.key === 'Enter') {
+            if (selectedLocationSuggestionIndex >= 0 && selectedLocationSuggestionIndex < locationSuggestions.length) {
+                // If a suggestion is selected, use that
+                handleLocationSuggestionClick(locationSuggestions[selectedLocationSuggestionIndex]);
+            } else {
+                // Otherwise just search with current input
+                handleSearch();
+            }
+            return;
+        }
+        
+        // Handle arrow keys for navigation
+        if (showLocationSuggestions && locationSuggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedLocationSuggestionIndex(prev => 
+                    prev < locationSuggestions.length - 1 ? prev + 1 : prev
+                );
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedLocationSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+            } else if (e.key === 'Escape') {
+                setShowLocationSuggestions(false);
+            }
+        }
+    };
+
     // Calculate pagination
     const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
     
@@ -185,6 +395,26 @@ export default function JobsPage() {
     // Handle search
     const handleSearch = () => {
         searchJobsHook(searchTitle, searchLocation);
+        setShowSuggestions(false);
+        setShowLocationSuggestions(false);
+    };
+
+    // Handle suggestion click
+    const handleSuggestionClick = (suggestion: string) => {
+        setSearchTitle(suggestion);
+        setShowSuggestions(false);
+        setTimeout(() => {
+            handleSearch();
+        }, 10);
+    };
+    
+    // Handle location suggestion click
+    const handleLocationSuggestionClick = (suggestion: string) => {
+        setSearchLocation(suggestion);
+        setShowLocationSuggestions(false);
+        setTimeout(() => {
+            handleSearch();
+        }, 10);
     };
     
     // Handle clearing all filters
@@ -236,8 +466,13 @@ export default function JobsPage() {
                                         className={`block w-full pl-12 pr-4 py-4 border-none focus:ring-0 focus:outline-none ${searchInputClass}`}
                                         placeholder="Job title, keywords, or company"
                                         value={searchTitle}
-                                        onChange={(e) => setSearchTitle(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                        onChange={(e) => {
+                                            setSearchTitle(e.target.value);
+                                            setShowSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowSuggestions(true)}
+                                        onKeyDown={handleSearchKeyDown}
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
@@ -249,12 +484,18 @@ export default function JobsPage() {
                                         </svg>
                                     </div>
                                     <input
+                                        ref={locationInputRef}
                                         type="text"
                                         className={`block w-full pl-12 pr-4 py-4 border-none focus:ring-0 focus:outline-none ${searchInputClass}`}
                                         placeholder="Location"
                                         value={searchLocation}
-                                        onChange={(e) => setSearchLocation(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                        onChange={(e) => {
+                                            setSearchLocation(e.target.value);
+                                            setShowLocationSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowLocationSuggestions(true)}
+                                        onKeyDown={handleLocationKeyDown}
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
@@ -277,6 +518,60 @@ export default function JobsPage() {
                             </button>
                         </div>
                     </div>
+                    
+                    {/* Suggestions Panel above the jobs list */}
+                    {(showSuggestions && suggestions.length > 0) || (showLocationSuggestions && locationSuggestions.length > 0) ? (
+                        <div 
+                            ref={suggestionsRef}
+                            className={`relative z-50 w-full mt-1 mb-4 rounded-lg shadow-lg border ${suggestionsBgClass}`}
+                        >
+                            {showSuggestions && suggestions.length > 0 && (
+                                <div>
+                                    <h4 className={`px-4 py-2 text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-500"} border-b border-${isDark ? "gray-700" : "gray-200"}`}>
+                                        Job Suggestions
+                                    </h4>
+                                    <ul className="py-2">
+                                        {suggestions.map((suggestion, index) => (
+                                            <li 
+                                                key={index}
+                                                className={`px-5 py-3 cursor-pointer flex items-center ${index === selectedSuggestionIndex ? selectedSuggestionClass : ''} ${suggestionItemClass}`}
+                                                onClick={() => handleSuggestionClick(suggestion)}
+                                                onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                                            >
+                                                <svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="font-medium">{suggestion}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            
+                            {showLocationSuggestions && locationSuggestions.length > 0 && (
+                                <div className={showSuggestions && suggestions.length > 0 ? `border-t border-${isDark ? "gray-700" : "gray-200"}` : ""}>
+                                    <h4 className={`px-4 py-2 text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-500"} ${showSuggestions && suggestions.length > 0 ? "" : `border-b border-${isDark ? "gray-700" : "gray-200"}`}`}>
+                                        Location Suggestions
+                                    </h4>
+                                    <ul className="py-2">
+                                        {locationSuggestions.map((suggestion, index) => (
+                                            <li 
+                                                key={index}
+                                                className={`px-5 py-3 cursor-pointer flex items-center ${index === selectedLocationSuggestionIndex ? selectedSuggestionClass : ''} ${suggestionItemClass}`}
+                                                onClick={() => handleLocationSuggestionClick(suggestion)}
+                                                onMouseEnter={() => setSelectedLocationSuggestionIndex(index)}
+                                            >
+                                                <svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="font-medium">{suggestion}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    ) : null}
                     
                     {/* Active Filters */}
                     {(hookSearchTitle || hookSearchLocation) && (
