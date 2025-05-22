@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+@layer base{
+  body {
+      @apply dark:bg-gray-800 bg-white
+  }
+}

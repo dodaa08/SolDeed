@@ -4,6 +4,7 @@ import "./globals.css";
 import AppWalletProvider from "./components/WalletProvider/AppWalletProvider";
 import Header from "./components/landing/header";
 import Footer from "./components/landing/Footer";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,11 +31,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AppWalletProvider>
           <Header />
           <main className="flex-grow">{children}</main>
           <Footer />
         </AppWalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -4,8 +4,14 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useJobs } from '@/app/hooks/useJobs';
 import { useRouter } from 'next/navigation';
+import { useTheme } from "next-themes";
+
 
 export default function Hero() {
+    const { systemTheme, theme, setTheme } = useTheme();
+    const currentTheme = theme === 'system' ? systemTheme : theme;
+    const isDark = currentTheme === 'dark';
+    
     const { allJobs = [], searchJobs, searchTitle, searchLocation } = useJobs();
     const [searchTerm, setSearchTerm] = useState('');
     const [locationTerm, setLocationTerm] = useState('');
@@ -129,21 +135,58 @@ export default function Hero() {
         }
     };
 
+    // Conditional styling based on theme
+    const heroBackgroundClass = isDark 
+        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" 
+        : "bg-gradient-to-br from-white via-blue-50 to-white";
+    
+    const headingTextClass = isDark
+        ? "text-gray-100" 
+        : "text-gray-900";
+        
+    const accentTextClass = isDark
+        ? "text-blue-400"
+        : "text-blue-600";
+        
+    const paragraphTextClass = isDark
+        ? "text-gray-300" 
+        : "text-gray-600";
+        
+    const inputBgClass = isDark
+        ? "bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500"
+        : "bg-white text-gray-900 placeholder-gray-500";
+        
+    const suggestionsBgClass = isDark
+        ? "bg-gray-800 border-gray-700"
+        : "bg-white border-gray-200";
+        
+    const suggestionItemClass = isDark
+        ? "hover:bg-gray-700 text-gray-200"
+        : "hover:bg-blue-50 text-gray-800";
+        
+    const searchButtonClass = isDark
+        ? "bg-blue-500 hover:bg-blue-600 text-white"
+        : "bg-blue-600 hover:bg-blue-700 text-white";
+        
+    const linkClass = isDark
+        ? "text-blue-400 hover:text-blue-300"
+        : "text-blue-600 hover:text-blue-800";
+
     return (
-        <div className="bg-gradient-to-br from-white via-blue-50 to-white py-8 md:py-12 w-full">
+        <div className={`${heroBackgroundClass} py-8 md:py-12 w-full`}>
             <div className="max-w-7xl mx-auto px-4 md:px-6">
                 {/* Simple Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight mb-4">
-                        <span className="text-blue-600">Blockchain</span> Careers on <span className="text-blue-600">Solana</span>
+                    <h1 className={`text-3xl md:text-5xl font-bold ${headingTextClass} leading-tight mb-4`}>
+                        <span className={accentTextClass}>Blockchain</span> Careers on <span className={accentTextClass}>Solana</span>
                     </h1>
-                    <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                    <p className={`text-lg md:text-xl ${paragraphTextClass} max-w-3xl mx-auto`}>
                         The first Web3 job platform built on Solana. Connecting talent with opportunities in the blockchain ecosystem.
                     </p>
                 </div>
 
                 {/* Search Bar - Prominent */}
-                <div className="relative w-full shadow-xl rounded-xl overflow-hidden max-w-5xl mx-auto mb-4">
+                <div className={`relative w-full shadow-xl rounded-xl overflow-hidden max-w-5xl mx-auto mb-4 ${isDark ? 'shadow-gray-900' : ''}`}>
                     <div className="md:flex">
                         <div className="flex-1">
                             <div className="relative">
@@ -155,7 +198,7 @@ export default function Hero() {
                                 <input
                                     ref={inputRef}
                                     type="text"
-                                    className="block w-full pl-14 pr-4 py-5 text-lg border-none focus:ring-0 focus:outline-none text-gray-900 placeholder-gray-500"
+                                    className={`block w-full pl-14 pr-4 py-5 text-lg border-none focus:ring-0 focus:outline-none ${inputBgClass}`}
                                     placeholder="Job title, keywords, or company"
                                     value={searchTerm}
                                     onChange={(e) => {
@@ -170,13 +213,13 @@ export default function Hero() {
                                 {showSuggestions && suggestions.length > 0 && (
                                     <div 
                                         ref={suggestionsRef}
-                                        className="absolute z-50 w-full left-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-80 overflow-y-auto"
+                                        className={`absolute z-50 w-full left-0 top-full mt-1 rounded-md shadow-lg border max-h-80 overflow-y-auto ${suggestionsBgClass}`}
                                     >
                                         <ul className="py-1">
                                             {suggestions.map((suggestion, index) => (
                                                 <li 
                                                     key={index}
-                                                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-gray-800 flex items-center"
+                                                    className={`px-4 py-2 cursor-pointer flex items-center ${suggestionItemClass}`}
                                                     onClick={() => handleSuggestionClick(suggestion)}
                                                 >
                                                     <svg className="h-4 w-4 text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -199,7 +242,7 @@ export default function Hero() {
                                 </div>
                                 <input
                                     type="text"
-                                    className="block w-full pl-14 pr-4 py-5 text-lg border-none md:border-l border-gray-200 focus:ring-0 focus:outline-none text-gray-900 placeholder-gray-500"
+                                    className={`block w-full pl-14 pr-4 py-5 text-lg border-none md:border-l border-gray-200 focus:ring-0 focus:outline-none ${inputBgClass}`}
                                     placeholder="Location"
                                     value={locationTerm}
                                     onChange={(e) => setLocationTerm(e.target.value)}
@@ -209,7 +252,7 @@ export default function Hero() {
                         </div>
                         <button 
                             onClick={handleSearch}
-                            className="w-full md:w-auto px-10 py-4 bg-blue-600 text-white text-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none cursor-pointer relative"
+                            className={`w-full md:w-auto px-10 py-4 text-lg font-medium transition-colors focus:outline-none cursor-pointer relative ${searchButtonClass}`}
                             disabled={isSearching}
                         >
                             {isSearching ? (
@@ -233,7 +276,7 @@ export default function Hero() {
                 <div className="text-center text-sm">
                     <button 
                         onClick={redirectToJobsPage}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className={`font-medium ${linkClass}`}
                     >
                         Advanced Search on Jobs Page →
                     </button>
@@ -249,9 +292,9 @@ export default function Hero() {
                 }
                 
                 .search-highlight {
-                    animation: highlight-pulse 1.5s ease-out;
+                    animation: highlight-pulse 1.5s ease-in-out;
                 }
             `}</style>
         </div>
-    )
+    );
 }

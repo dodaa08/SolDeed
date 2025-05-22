@@ -7,6 +7,7 @@ export default function(){
     <>
     <div>
       <LandingPage />
+      
     </div>
     </>
   ) 
