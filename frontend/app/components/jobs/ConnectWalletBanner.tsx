@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from 'react';
 import WalletConnectButton from '../WalletProvider/WalletConnectbtn';
 
 interface ConnectWalletBannerProps {
@@ -8,13 +9,20 @@ interface ConnectWalletBannerProps {
 }
 
 export function ConnectWalletBanner({ totalJobs, onConnect, isDark = false }: ConnectWalletBannerProps) {
-  // Conditional styling for dark mode
-  const bannerClass = isDark 
+  const [mounted, setMounted] = useState(false);
+
+  // Mount the component client-side to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Conditional styling for dark mode - only applied after component is mounted
+  const bannerClass = mounted && isDark 
     ? "bg-blue-900/30 border-blue-800 rounded-lg p-4 mb-8 flex flex-col md:flex-row justify-between items-center"
     : "bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex flex-col md:flex-row justify-between items-center";
   
-  const titleClass = isDark ? "text-lg font-semibold text-blue-300" : "text-lg font-semibold text-blue-900";
-  const textClass = isDark ? "text-blue-400" : "text-blue-700";
+  const titleClass = mounted && isDark ? "text-lg font-semibold text-blue-300" : "text-lg font-semibold text-blue-900";
+  const textClass = mounted && isDark ? "text-blue-400" : "text-blue-700";
 
   return (
     <div className={bannerClass}>
@@ -22,9 +30,9 @@ export function ConnectWalletBanner({ totalJobs, onConnect, isDark = false }: Co
         <h3 className={titleClass}>Connect your wallet to see all job listings</h3>
         <p className={textClass}>Browse over {totalJobs}+ blockchain jobs on the Solana network</p>
       </div>
-      {/* <div onClick={onConnect}>
+      <div onClick={onConnect}>
         <WalletConnectButton />
-      </div> */}
+      </div>
     </div>
   );
 } 

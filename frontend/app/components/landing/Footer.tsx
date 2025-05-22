@@ -1,23 +1,31 @@
 "use client";
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from "next-themes";
 
 export default function Footer() {
+  const [mounted, setMounted] = useState(false);
+  
   // Theme handling
   const { systemTheme, theme } = useTheme();
   const currentTheme = theme === 'system' ? systemTheme : theme;
   const isDark = currentTheme === 'dark';
   
+  // Mount component on client-side to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // Conditional styling
-  const footerBgClass = isDark ? "bg-gray-900 border-gray-800" : "bg-gray-50 border-gray-200";
-  const logoTextClass = isDark ? "text-blue-400" : "text-blue-600";
-  const descriptionClass = isDark ? "text-gray-400" : "text-gray-600";
-  const sectionTitleClass = isDark ? "text-gray-300" : "text-gray-900";
-  const linkClass = isDark ? "text-gray-400 hover:text-blue-400" : "text-gray-600 hover:text-blue-600";
-  const socialIconClass = isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-400 hover:text-blue-500";
-  const copyrightClass = isDark ? "text-gray-500" : "text-gray-500";
-  const footerLinkClass = isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-500 hover:text-blue-600";
-  const borderClass = isDark ? "border-gray-800" : "border-gray-200";
+  const footerBgClass = mounted && isDark ? "bg-gray-900 border-gray-800" : "bg-gray-50 border-gray-200";
+  const logoTextClass = mounted && isDark ? "text-blue-400" : "text-blue-600";
+  const descriptionClass = mounted && isDark ? "text-gray-400" : "text-gray-600";
+  const sectionTitleClass = mounted && isDark ? "text-gray-300" : "text-gray-900";
+  const linkClass = mounted && isDark ? "text-gray-400 hover:text-blue-400" : "text-gray-600 hover:text-blue-600";
+  const socialIconClass = mounted && isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-400 hover:text-blue-500";
+  const copyrightClass = mounted && isDark ? "text-gray-500" : "text-gray-500";
+  const footerLinkClass = mounted && isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-500 hover:text-blue-600";
+  const borderClass = mounted && isDark ? "border-gray-800" : "border-gray-200";
 
   return (
     <footer className={`${footerBgClass} border-t py-12`}>

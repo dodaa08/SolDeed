@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 
 
 export default function Hero() {
+    const [mounted, setMounted] = useState(false);
     const { systemTheme, theme, setTheme } = useTheme();
     const currentTheme = theme === 'system' ? systemTheme : theme;
     const isDark = currentTheme === 'dark';
@@ -21,6 +22,11 @@ export default function Hero() {
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+    
+    // Mount component on client-side to prevent hydration mismatch
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     
     // Generate suggestions based on search term
     useEffect(() => {
@@ -136,39 +142,39 @@ export default function Hero() {
     };
 
     // Conditional styling based on theme
-    const heroBackgroundClass = isDark 
+    const heroBackgroundClass = mounted && isDark 
         ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" 
         : "bg-gradient-to-br from-white via-blue-50 to-white";
     
-    const headingTextClass = isDark
+    const headingTextClass = mounted && isDark
         ? "text-gray-100" 
         : "text-gray-900";
         
-    const accentTextClass = isDark
+    const accentTextClass = mounted && isDark
         ? "text-blue-400"
         : "text-blue-600";
         
-    const paragraphTextClass = isDark
+    const paragraphTextClass = mounted && isDark
         ? "text-gray-300" 
         : "text-gray-600";
         
-    const inputBgClass = isDark
+    const inputBgClass = mounted && isDark
         ? "bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500"
         : "bg-white text-gray-900 placeholder-gray-500";
         
-    const suggestionsBgClass = isDark
+    const suggestionsBgClass = mounted && isDark
         ? "bg-gray-800 border-gray-700"
         : "bg-white border-gray-200";
         
-    const suggestionItemClass = isDark
+    const suggestionItemClass = mounted && isDark
         ? "hover:bg-gray-700 text-gray-200"
         : "hover:bg-blue-50 text-gray-800";
         
-    const searchButtonClass = isDark
+    const searchButtonClass = mounted && isDark
         ? "bg-blue-500 hover:bg-blue-600 text-white"
         : "bg-blue-600 hover:bg-blue-700 text-white";
         
-    const linkClass = isDark
+    const linkClass = mounted && isDark
         ? "text-blue-400 hover:text-blue-300"
         : "text-blue-600 hover:text-blue-800";
 
@@ -186,7 +192,7 @@ export default function Hero() {
                 </div>
 
                 {/* Search Bar - Prominent */}
-                <div className={`relative w-full shadow-xl rounded-xl overflow-hidden max-w-5xl mx-auto mb-4 ${isDark ? 'shadow-gray-900' : ''}`}>
+                <div className={`relative w-full shadow-xl rounded-xl overflow-hidden max-w-5xl mx-auto mb-4 ${mounted && isDark ? 'shadow-gray-900' : ''}`}>
                     <div className="md:flex">
                         <div className="flex-1">
                             <div className="relative">
@@ -252,19 +258,17 @@ export default function Hero() {
                         </div>
                         <button 
                             onClick={handleSearch}
-                            className={`w-full md:w-auto px-10 py-4 text-lg font-medium transition-colors focus:outline-none cursor-pointer relative ${searchButtonClass}`}
                             disabled={isSearching}
+                            className={`w-full md:w-auto px-10 py-4 text-lg font-medium ${searchButtonClass} transition-colors focus:outline-none`}
                         >
                             {isSearching ? (
-                                <>
-                                    <span className="opacity-0">Search Jobs</span>
-                                    <span className="absolute inset-0 flex items-center justify-center">
-                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </span>
-                                </>
+                                <span className="flex items-center justify-center">
+                                    <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Searching...
+                                </span>
                             ) : (
                                 'Search Jobs'
                             )}
@@ -272,8 +276,7 @@ export default function Hero() {
                     </div>
                 </div>
                 
-                {/* Search on Jobs page link */}
-                <div className="text-center text-sm">
+                <div className="text-center">
                     <button 
                         onClick={redirectToJobsPage}
                         className={`font-medium ${linkClass}`}
@@ -283,16 +286,16 @@ export default function Hero() {
                 </div>
             </div>
             
-            {/* Add styles for search highlight */}
+            {/* Add search highlight animation */}
             <style jsx global>{`
-                @keyframes highlight-pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-                    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+                @keyframes searchHighlight {
+                    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+                    70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
                     100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
                 }
                 
                 .search-highlight {
-                    animation: highlight-pulse 1.5s ease-in-out;
+                    animation: searchHighlight 1.5s ease-in-out;
                 }
             `}</style>
         </div>
