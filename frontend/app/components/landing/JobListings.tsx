@@ -59,7 +59,7 @@ export default function JobListings({ jobsState }: JobListingsProps) {
       : mounted && isConnected
         ? "bg-blue-600 text-white hover:bg-blue-700"
         : "bg-gray-100 text-gray-800 hover:bg-gray-200";
-  const noJobsClass = mounted && isDark ? "text-gray-400" : "text-gray-500";
+  const noJobsClass = mounted && isDark ? "text-gray-400 text-center h-screen" : "text-gray-500 text-center h-screen";
 
   // Format wallet address for display
   const formatWalletAddress = (address: string | null) => {
@@ -201,7 +201,7 @@ export default function JobListings({ jobsState }: JobListingsProps) {
               <JobCard key={job.id} job={job} isDark={mounted && isDark} />
             ))
           ) : (
-            <div className={`text-center py-10 ${noJobsClass}`}>
+            <div className={`text-center py-10  ${noJobsClass}`}>
               No jobs available at this time.
             </div>
           )}

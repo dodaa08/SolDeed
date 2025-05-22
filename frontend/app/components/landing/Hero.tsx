@@ -20,10 +20,14 @@ export default function Hero({ jobsState }: HeroProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [locationTerm, setLocationTerm] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const suggestionsRef = useRef<HTMLDivElement>(null);
+    const locationSuggestionsRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const locationInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     
     // Mount component on client-side to prevent hydration mismatch
@@ -59,16 +63,11 @@ export default function Hero({ jobsState }: HeroProps) {
             const matchingCompanies = allJobs
                 .filter(job => job.organization.name.toLowerCase().includes(term))
                 .map(job => job.organization.name);
-                
-            const matchingLocations = allJobs
-                .filter(job => job.locations && job.locations.some(loc => loc?.toLowerCase().includes(term)))
-                .flatMap(job => job.locations.filter(Boolean));
             
             // Combine and remove duplicates
             const allSuggestions = Array.from(new Set([
                 ...matchingTitles,
-                ...matchingCompanies,
-                ...matchingLocations
+                ...matchingCompanies
             ]));
             
             // Sort by relevance (starts with term first)
@@ -85,13 +84,57 @@ export default function Hero({ jobsState }: HeroProps) {
             setSuggestions([]);
         }
     }, [searchTerm, allJobs]);
+
+    // Generate location suggestions based on location term
+    useEffect(() => {
+        if (!locationTerm || locationTerm.length < 2 || !allJobs?.length) {
+            setLocationSuggestions([]);
+            return;
+        }
+        
+        const term = locationTerm.toLowerCase().trim();
+        
+        try {
+            // Extract locations that match
+            const allLocations = allJobs
+                .flatMap(job => job.locations || [])
+                .filter(Boolean);
+                
+            // Filter and remove duplicates
+            const matchingLocations = Array.from(new Set(
+                allLocations.filter(loc => 
+                    loc.toLowerCase().includes(term)
+                )
+            ));
+            
+            // Sort by relevance (starts with term first)
+            const sortedLocations = matchingLocations.sort((a, b) => {
+                const aStartsWith = a.toLowerCase().startsWith(term) ? -1 : 0;
+                const bStartsWith = b.toLowerCase().startsWith(term) ? -1 : 0;
+                return aStartsWith - bStartsWith;
+            });
+            
+            // Limit to 8 suggestions
+            setLocationSuggestions(sortedLocations.slice(0, 8));
+        } catch (error) {
+            console.error("Error generating location suggestions:", error);
+            setLocationSuggestions([]);
+        }
+    }, [locationTerm, allJobs]);
     
     // Handle clicks outside suggestions
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
+            // Job suggestions
             if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
                 inputRef.current && !inputRef.current.contains(event.target as Node)) {
                 setShowSuggestions(false);
+            }
+            
+            // Location suggestions
+            if (locationSuggestionsRef.current && !locationSuggestionsRef.current.contains(event.target as Node) &&
+                locationInputRef.current && !locationInputRef.current.contains(event.target as Node)) {
+                setShowLocationSuggestions(false);
             }
         }
         
@@ -110,6 +153,7 @@ export default function Hero({ jobsState }: HeroProps) {
         
         // Hide suggestions
         setShowSuggestions(false);
+        setShowLocationSuggestions(false);
         
         // Scroll to job listings section with a smooth effect
         setTimeout(() => {
@@ -136,6 +180,17 @@ export default function Hero({ jobsState }: HeroProps) {
         // Set the search term and immediately perform search
         setSearchTerm(suggestion);
         setShowSuggestions(false);
+        
+        // Small delay to ensure state updates before search
+        setTimeout(() => {
+            handleSearch();
+        }, 10);
+    };
+    
+    const handleLocationSuggestionClick = (suggestion: string) => {
+        // Set the location term and immediately perform search
+        setLocationTerm(suggestion);
+        setShowLocationSuggestions(false);
         
         // Small delay to ensure state updates before search
         setTimeout(() => {
@@ -262,13 +317,41 @@ export default function Hero({ jobsState }: HeroProps) {
                                     </svg>
                                 </div>
                                 <input
+                                    ref={locationInputRef}
                                     type="text"
                                     className={`block w-full pl-14 pr-4 py-5 text-lg border-none md:border-l border-gray-200 focus:ring-0 focus:outline-none ${inputBgClass}`}
                                     placeholder="Location"
                                     value={locationTerm}
-                                    onChange={(e) => setLocationTerm(e.target.value)}
+                                    onChange={(e) => {
+                                        setLocationTerm(e.target.value);
+                                        setShowLocationSuggestions(e.target.value.length >= 2);
+                                    }}
+                                    onFocus={() => setShowLocationSuggestions(locationTerm.length >= 2)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                 />
+                                
+                                {/* Location suggestions dropdown */}
+                                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                                    <div 
+                                        ref={locationSuggestionsRef}
+                                        className={`absolute z-50 w-full left-0 top-full mt-1 rounded-md shadow-lg border max-h-80 overflow-y-auto ${suggestionsBgClass}`}
+                                    >
+                                        <ul className="py-1">
+                                            {locationSuggestions.map((suggestion, index) => (
+                                                <li 
+                                                    key={index}
+                                                    className={`px-4 py-2 cursor-pointer flex items-center ${suggestionItemClass}`}
+                                                    onClick={() => handleLocationSuggestionClick(suggestion)}
+                                                >
+                                                    <svg className="h-4 w-4 text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span>{suggestion}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <button 
