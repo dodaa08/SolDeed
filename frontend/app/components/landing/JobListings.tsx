@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
-import { useJobs } from '@/app/hooks/useJobs';
+import { useJobs, UseJobsResult } from '@/app/hooks/useJobs';
 import { JobCard } from '../jobs/JobCard';
 import { ConnectWalletBanner } from '../jobs/ConnectWalletBanner';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -8,8 +8,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from "next-themes";
 
+interface JobListingsProps {
+  jobsState: UseJobsResult;
+}
 
-export default function JobListings() {
+export default function JobListings({ jobsState }: JobListingsProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -35,7 +38,7 @@ export default function JobListings() {
     isConnected, 
     walletAddress,
     handleConnect,
-  } = useJobs();
+  } = jobsState;
 
   // Mount the component client-side to prevent hydration mismatch
   useEffect(() => {

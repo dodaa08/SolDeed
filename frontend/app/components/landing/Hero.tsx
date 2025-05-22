@@ -2,18 +2,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { useJobs } from '@/app/hooks/useJobs';
+import { useJobs, UseJobsResult } from '@/app/hooks/useJobs';
 import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
 
+interface HeroProps {
+    jobsState: UseJobsResult;
+}
 
-export default function Hero() {
+export default function Hero({ jobsState }: HeroProps) {
     const [mounted, setMounted] = useState(false);
     const { systemTheme, theme, setTheme } = useTheme();
     const currentTheme = theme === 'system' ? systemTheme : theme;
     const isDark = currentTheme === 'dark';
     
-    const { allJobs = [], searchJobs, searchTitle, searchLocation } = useJobs();
+    const { allJobs = [], searchJobs, searchTitle, searchLocation } = jobsState;
     const [searchTerm, setSearchTerm] = useState('');
     const [locationTerm, setLocationTerm] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -27,6 +30,16 @@ export default function Hero() {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Sync the search terms from the useJobs hook when they change
+    useEffect(() => {
+        if (searchTitle !== searchTerm) {
+            setSearchTerm(searchTitle);
+        }
+        if (searchLocation !== locationTerm) {
+            setLocationTerm(searchLocation);
+        }
+    }, [searchTitle, searchLocation]);
     
     // Generate suggestions based on search term
     useEffect(() => {
@@ -99,22 +112,24 @@ export default function Hero() {
         setShowSuggestions(false);
         
         // Scroll to job listings section with a smooth effect
-        const listingsSection = document.getElementById('job-listings');
-        if (listingsSection) {
-            // Add highlighted class to job listings section temporarily
-            listingsSection.classList.add('search-highlight');
-            
-            // Scroll to the job listings
-            listingsSection.scrollIntoView({ behavior: 'smooth' });
-            
-            // Remove the highlight after animation
-            setTimeout(() => {
+        setTimeout(() => {
+            const listingsSection = document.getElementById('job-listings');
+            if (listingsSection) {
+                // Add highlighted class to job listings section temporarily
+                listingsSection.classList.add('search-highlight');
+                
+                // Scroll to the job listings
+                listingsSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Remove the highlight after animation
+                setTimeout(() => {
+                    setIsSearching(false);
+                    listingsSection.classList.remove('search-highlight');
+                }, 1500);
+            } else {
                 setIsSearching(false);
-                listingsSection.classList.remove('search-highlight');
-            }, 1500);
-        } else {
-            setIsSearching(false);
-        }
+            }
+        }, 100);
     };
     
     const handleSuggestionClick = (suggestion: string) => {
