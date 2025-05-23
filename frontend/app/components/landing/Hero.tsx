@@ -6,6 +6,8 @@ import { useJobs, UseJobsResult } from '@/app/hooks/useJobs';
 import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
 
+
+
 // Simple debounce function
 const useDebounce = <T,>(value: T, delay: number): T => {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -23,9 +25,11 @@ const useDebounce = <T,>(value: T, delay: number): T => {
     return debouncedValue;
 };
 
+
 interface HeroProps {
     jobsState: UseJobsResult;
 }
+
 
 export default function Hero({ jobsState }: HeroProps) {
     const [mounted, setMounted] = useState(false);
@@ -302,7 +306,7 @@ export default function Hero({ jobsState }: HeroProps) {
 
     // Theme-based styling
     const heroBackgroundClass = mounted && isDark 
-        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" 
+        ? "bg-black/95" 
         : "bg-gradient-to-br from-white via-blue-50 to-white";
     
     const headingTextClass = mounted && isDark
@@ -318,11 +322,11 @@ export default function Hero({ jobsState }: HeroProps) {
         : "text-gray-600";
         
     const inputBgClass = mounted && isDark
-        ? "bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500"
+        ? "bg-gray-700 border-gray-700 text-gray-100 placeholder-gray-500"
         : "bg-white text-gray-900 placeholder-gray-500";
         
     const suggestionsBgClass = mounted && isDark
-        ? "bg-gray-800 border-gray-700"
+        ? "bg-black/120 border-gray-700"
         : "bg-white border-gray-200";
         
     const suggestionItemClass = mounted && isDark
@@ -334,7 +338,7 @@ export default function Hero({ jobsState }: HeroProps) {
         : "bg-blue-50";
         
     const searchButtonClass = mounted && isDark
-        ? "bg-blue-500 hover:bg-blue-600 text-white"
+        ? "bg-blue-500  hover:bg-gray-600/90 text-white"
         : "bg-blue-600 hover:bg-blue-700 text-white";
         
     const linkClass = mounted && isDark
@@ -346,8 +350,8 @@ export default function Hero({ jobsState }: HeroProps) {
             <div className="max-w-7xl mx-auto px-4 md:px-6">
                 {/* Simple Header */}
                 <div className="text-center mb-8">
-                    <h1 className={`text-3xl md:text-5xl font-bold ${headingTextClass} leading-tight mb-4`}>
-                        <span className={accentTextClass}>Blockchain</span> Careers on <span className={accentTextClass}>Solana</span>
+                    <h1 className={`text-2xl md:text-5xl font-bold ${headingTextClass} leading-tight mb-4`}>
+                        <span className="">Blockchain</span> Careers on <span className={accentTextClass}>Solana</span>
                     </h1>
                     <p className={`text-lg md:text-xl ${paragraphTextClass} max-w-3xl mx-auto`}>
                         The first Web3 job platform built on Solana. Connecting talent with opportunities in the blockchain ecosystem.
@@ -383,7 +387,7 @@ export default function Hero({ jobsState }: HeroProps) {
                                 {/* Remove the individual job suggestions dropdown */}
                             </div>
                         </div>
-                        <div className="md:w-52 md:border-l border-gray-200">
+                        <div className="md:w-52 md:border-l border-gray-500">
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <svg className="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -394,7 +398,7 @@ export default function Hero({ jobsState }: HeroProps) {
                                     ref={locationInputRef}
                                     id="location-input"
                                     type="text"
-                                    className={`block w-full pl-14 pr-4 py-5 text-lg border-none md:border-l border-gray-200 focus:ring-0 focus:outline-none ${inputBgClass}`}
+                                    className={`block w-full pl-14 pr-4 py-5 text-lg border-none md:border-l border-gray-200  focus:outline-none ${inputBgClass}`}
                                     placeholder="Location"
                                     value={locationTerm}
                                     onChange={(e) => {

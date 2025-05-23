@@ -46,14 +46,14 @@ export default function JobListings({ jobsState }: JobListingsProps) {
   }, []);
 
   // Conditional styling based on theme
-  const sectionBgClass = mounted && isDark ? "bg-gray-900" : "bg-white";
+  const sectionBgClass = mounted && isDark ? "bg-black/95" : "bg-white";
   const headingTextClass = mounted && isDark ? "text-gray-100" : "text-gray-900";
   const subTextClass = mounted && isDark ? "text-gray-400" : "text-gray-500";
   const connectedBadgeClass = mounted && isDark 
     ? "bg-gray-800 text-gray-300" 
     : "bg-gray-100 text-gray-800";
   const viewMoreBtnClass = mounted && (isDark && isConnected)
-    ? "bg-blue-500 text-white hover:bg-blue-600"
+    ? "bg-gray-700 text-white hover:bg-gray-600"
     : mounted && (isDark && !isConnected)
       ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
       : mounted && isConnected

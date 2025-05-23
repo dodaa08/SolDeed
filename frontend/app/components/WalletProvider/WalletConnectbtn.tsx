@@ -71,7 +71,7 @@ export default function WalletConnectButton() {
         
         /* Override the default wallet button styles */
         .wallet-adapter-button {
-          background-color:rgb(59, 123, 206) !important;
+          background-color:rgb(51, 56, 63) !important;
           transition: all 0.2s ease !important;
         }
         

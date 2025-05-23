@@ -17,7 +17,7 @@ export default function Footer() {
   }, []);
   
   // Conditional styling
-  const footerBgClass = mounted && isDark ? "bg-gray-900 border-gray-800" : "bg-gray-50 border-gray-200";
+  const footerBgClass = mounted && isDark ? "bg-black/120 border-gray-800" : "bg-gray-50 border-gray-200";
   const logoTextClass = mounted && isDark ? "text-blue-400" : "text-blue-600";
   const descriptionClass = mounted && isDark ? "text-gray-400" : "text-gray-600";
   const sectionTitleClass = mounted && isDark ? "text-gray-300" : "text-gray-900";
@@ -34,8 +34,14 @@ export default function Footer() {
           {/* Logo and slogan */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center mb-4">
-              <div className="h-10 w-10 text-center px-5 py-2 relative flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-xl">Sol</div>
-              <span className={`ml-1 text-xl font-semibold ${logoTextClass}`}>Deed</span>
+            <div className="flex items-center">
+                        <h1 className={mounted && isDark 
+                            ? 'text-2xl font-semibold bg-gradient-to-r bg-gray-100 bg-clip-text text-transparent' 
+                            : 'text-2xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 bg-clip-text text-transparent'
+                        }>
+                            SolDeed
+                        </h1>
+                    </div>
             </div>
             <p className={`mb-4 ${descriptionClass}`}>
               Connecting blockchain talent with innovative projects on Solana.

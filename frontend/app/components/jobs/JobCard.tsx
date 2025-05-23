@@ -14,7 +14,7 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
   const cardBgClass = isDark
     ? job.highlighted 
       ? 'bg-blue-900/30 border-blue-700 ring-1 ring-blue-700'
-      : 'bg-gray-800 border-gray-700'
+      : 'bg-black/120 border-gray-700'
     : job.highlighted 
       ? 'bg-blue-50/30 border-blue-300 ring-1 ring-blue-300' 
       : 'bg-white border-gray-200';
@@ -39,7 +39,7 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
   const applyBtnClass = isDark
     ? job.highlighted
       ? 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-600'
-      : 'bg-gray-700 border border-blue-500 text-blue-400 hover:bg-gray-600'
+      : 'bg-gray-700 border border-gray-500 text-blue-400 hover:bg-gray-600'
     : job.highlighted
       ? 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-600'
       : 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-50';

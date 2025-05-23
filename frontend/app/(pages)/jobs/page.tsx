@@ -68,23 +68,23 @@ export default function JobsPage() {
     } = useJobs();
     
     // Conditional styling based on theme
-    const mainBgClass = isDark ? "bg-gray-900" : "bg-white";
-    const headerBgClass = isDark ? "bg-gray-900" : "bg-blue-50";
+    const mainBgClass = isDark ? "bg-black/120" : "bg-white";
+    const headerBgClass = isDark ? "bg-black/120 border-b border-gray-900" : "bg-blue-50";
     const headingTextClass = isDark ? "text-gray-100" : "text-gray-900";
     const paragraphTextClass = isDark ? "text-gray-300" : "text-gray-700";
     const statsTextClass = isDark ? "text-gray-300" : "text-gray-700";
     const statsDimTextClass = isDark ? "text-gray-500" : "text-gray-500";
     const searchBgClass = isDark ? "bg-gray-800" : "bg-white";
-    const searchInputClass = isDark ? "text-gray-100 placeholder-gray-500" : "text-gray-900 placeholder-gray-500";
+    const searchInputClass = isDark ? "text-gray-100 placeholder-gray-500 border-gray-900" : "text-gray-900 placeholder-gray-500 border-gray-200";
     const searchIconClass = isDark ? "text-gray-500" : "text-gray-400";
-    const buttonClass = isDark ? "bg-blue-700 hover:bg-blue-800" : "bg-blue-600 hover:bg-blue-700";
+    const buttonClass = isDark ? "bg-blue-600 hover:bg-blue-800" : "bg-blue-600 hover:bg-blue-700";
     const filterTagClass = isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-700";
     const filterIconClass = isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-500 hover:text-gray-700";
     const paginationActiveClass = isDark ? "bg-blue-700 text-white" : "bg-blue-600 text-white";
     const paginationInactiveClass = isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-700 hover:bg-blue-50";
     const paginationDisabledClass = isDark ? "text-gray-700 cursor-not-allowed" : "text-gray-300 cursor-not-allowed";
     const paginationPreviewClass = isDark ? "bg-gray-800 text-gray-500" : "bg-gray-100 text-gray-400";
-    const suggestionsBgClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
+    const suggestionsBgClass = isDark ? "bg-black/120 border-gray-700" : "bg-white border-gray-200";
     const suggestionItemClass = isDark ? "hover:bg-gray-700 text-gray-200" : "hover:bg-blue-50 text-gray-800";
     const selectedSuggestionClass = isDark ? "bg-gray-700" : "bg-blue-50";
     
@@ -463,7 +463,7 @@ export default function JobsPage() {
                                     <input
                                         ref={searchInputRef}
                                         type="text"
-                                        className={`block w-full pl-12 pr-4 py-4 border-none focus:ring-0 focus:outline-none ${searchInputClass}`}
+                                        className={`block w-full pl-12 pr-4 py-4 border-none focus:outline-none ${searchInputClass}`}
                                         placeholder="Job title, keywords, or company"
                                         value={searchTitle}
                                         onChange={(e) => {
@@ -486,7 +486,7 @@ export default function JobsPage() {
                                     <input
                                         ref={locationInputRef}
                                         type="text"
-                                        className={`block w-full pl-12 pr-4 py-4 border-none focus:ring-0 focus:outline-none ${searchInputClass}`}
+                                        className={`block w-full pl-12 pr-4 py-4  border-gray-900 focus:outline-none ${searchInputClass}`}
                                         placeholder="Location"
                                         value={searchLocation}
                                         onChange={(e) => {
