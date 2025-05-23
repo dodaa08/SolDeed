@@ -16,8 +16,8 @@ export interface Job {
   compensation_currency: string | null;
   locations: string[];
   organization: {
-    name: string;
-    logo_url: string;
+    company_name: string;
+    logo: string;
     id: number;
     head_count: number;
     industry_tags: string[];
@@ -59,7 +59,7 @@ export function useJobs(): UseJobsResult {
       try {
         // Simulate API call with a timeout
         setTimeout(() => {
-          setJobs(jobsData as Job[]);
+          setJobs(jobsData as unknown as Job[]);
           setIsLoading(false);
         }, 1000);
       } catch (err) {
@@ -78,7 +78,7 @@ export function useJobs(): UseJobsResult {
     return jobs.filter((job) => {
       const titleMatch = searchTitle 
         ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) || 
-          job.organization.name.toLowerCase().includes(searchTitle.toLowerCase())
+          job.organization.company_name.toLowerCase().includes(searchTitle.toLowerCase())
         : true;
       
       const locationMatch = searchLocation 

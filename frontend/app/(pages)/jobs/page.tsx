@@ -6,6 +6,8 @@ import { JobCard } from '@/app/components/jobs/JobCard';
 import { ConnectWalletBanner } from '@/app/components/jobs/ConnectWalletBanner';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useTheme } from "next-themes";
+import { useSupabaseJobs } from '@/app/hooks/useSupabaseJobs';
+import allJobsJson from '@/app/data/all_jobs.json';
 
 // Simple debounce function
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -25,6 +27,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 };
 
 export default function JobsPage() {
+    const { jobs: supabaseJobs, loading: loadingSupabase } = useSupabaseJobs();
     const [showConnectMessage, setShowConnectMessage] = useState(false);
     const [searchTitle, setSearchTitle] = useState('');
     const [searchLocation, setSearchLocation] = useState('');
@@ -51,21 +54,13 @@ export default function JobsPage() {
     const currentTheme = theme === 'system' ? systemTheme : theme;
     const isDark = currentTheme === 'dark';
     
-    const { 
-        jobs,
-        filteredJobs,
-        allJobs,
-        isLoading,
-        error,
-        searchJobs: searchJobsHook,
-        searchTitle: hookSearchTitle,
-        searchLocation: hookSearchLocation,
-        clearSearch,
-        isSearching,
-        walletAddress,
-        handleConnect,
-        isConnected
-    } = useJobs();
+    // Use allJobsJson for all jobs
+    const allJobs = allJobsJson;
+    const filteredJobs = allJobs.filter(job => {
+        const titleMatch = searchTitle ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) : true;
+        const locationMatch = searchLocation ? (job.locations && job.locations.some((loc: string) => loc.toLowerCase().includes(searchLocation.toLowerCase()))) : true;
+        return titleMatch && locationMatch;
+    });
     
     // Conditional styling based on theme
     const mainBgClass = isDark ? "bg-black/120" : "bg-white";
@@ -77,7 +72,7 @@ export default function JobsPage() {
     const searchBgClass = isDark ? "bg-gray-800" : "bg-white";
     const searchInputClass = isDark ? "text-gray-100 placeholder-gray-500 border-gray-900" : "text-gray-900 placeholder-gray-500 border-gray-200";
     const searchIconClass = isDark ? "text-gray-500" : "text-gray-400";
-    const buttonClass = isDark ? "bg-blue-600 hover:bg-blue-800" : "bg-blue-600 hover:bg-blue-700";
+    const buttonClass = isDark ? "bg-blue-400 hover:bg-blue-800" : "bg-blue-600 hover:bg-blue-700";
     const filterTagClass = isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-700";
     const filterIconClass = isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-500 hover:text-gray-700";
     const paginationActiveClass = isDark ? "bg-blue-700 text-white" : "bg-blue-600 text-white";
@@ -109,8 +104,8 @@ export default function JobsPage() {
             
             // Add matching company names
             const matchingCompanies = allJobs
-                .filter(job => job.organization.name.toLowerCase().includes(term))
-                .map(job => job.organization.name);
+                .filter((job: any) => typeof job.company_name === "string" && job.company_name.toLowerCase().includes(term))
+                .map((job: any) => job.company_name);
             jobSuggestions.push(...matchingCompanies);
             
             // Remove duplicates and sort
@@ -268,20 +263,20 @@ export default function JobsPage() {
     const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
     
     // Show preview of total pages even when not connected
-    const visibleTotalPages = isConnected ? totalPages : Math.min(3, totalPages);
+    const visibleTotalPages = connected ? totalPages : Math.min(3, totalPages);
     
     // Get current jobs for pagination
     const indexOfLastJob = currentPage * jobsPerPage;
     const indexOfFirstJob = indexOfLastJob - jobsPerPage;
     
     // If connected, show jobs from current page, otherwise only show first page
-    const currentJobs = isConnected
+    const currentJobs = connected
         ? filteredJobs.slice(indexOfFirstJob, indexOfLastJob)
         : filteredJobs.slice(0, jobsPerPage);
     
     // Page navigation handlers
     const goToNextPage = () => {
-        if (isConnected && currentPage < totalPages) {
+        if (connected && currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
             // Scroll to top of job list
             window.scrollTo({ top: 500, behavior: 'smooth' });
@@ -289,7 +284,7 @@ export default function JobsPage() {
     };
     
     const goToPreviousPage = () => {
-        if (isConnected && currentPage > 1) {
+        if (connected && currentPage > 1) {
             setCurrentPage(currentPage - 1);
             // Scroll to top of job list
             window.scrollTo({ top: 500, behavior: 'smooth' });
@@ -297,7 +292,7 @@ export default function JobsPage() {
     };
     
     const goToPage = (page: number) => {
-        if (isConnected && page >= 1 && page <= totalPages) {
+        if (connected && page >= 1 && page <= totalPages) {
             setCurrentPage(page);
             // Scroll to top of job list
             window.scrollTo({ top: 500, behavior: 'smooth' });
@@ -390,11 +385,10 @@ export default function JobsPage() {
     // Reset pagination when search changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [hookSearchTitle, hookSearchLocation]);
+    }, [searchTitle, searchLocation]);
     
     // Handle search
     const handleSearch = () => {
-        searchJobsHook(searchTitle, searchLocation);
         setShowSuggestions(false);
         setShowLocationSuggestions(false);
     };
@@ -421,7 +415,6 @@ export default function JobsPage() {
     const handleClearFilters = () => {
         setSearchTitle('');
         setSearchLocation('');
-        clearSearch();
         setCurrentPage(1);
         if (searchInputRef.current) {
             searchInputRef.current.focus();
@@ -430,13 +423,17 @@ export default function JobsPage() {
     
     // On component mount, check if there are search parameters already set in useJobs
     useEffect(() => {
-        if (hookSearchTitle) {
-            setSearchTitle(hookSearchTitle);
+        if (searchTitle) {
+            setSearchTitle(searchTitle);
         }
-        if (hookSearchLocation) {
-            setSearchLocation(hookSearchLocation);
+        if (searchLocation) {
+            setSearchLocation(searchLocation);
         }
     }, []);
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+    if (!mounted) return null;
 
     return (
         <main className={mainBgClass + " min-h-screen"}>
@@ -502,19 +499,8 @@ export default function JobsPage() {
                             <button 
                                 onClick={handleSearch}
                                 className={`w-full md:w-auto px-8 py-4 ${buttonClass} text-white font-medium transition-colors focus:outline-none cursor-pointer`}
-                                disabled={isSearching}
                             >
-                                {isSearching ? (
-                                    <span className="flex items-center justify-center">
-                                        <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Searching...
-                                    </span>
-                                ) : (
-                                    'Search Jobs'
-                                )}
+                                Search Jobs
                             </button>
                         </div>
                     </div>
@@ -574,14 +560,14 @@ export default function JobsPage() {
                     ) : null}
                     
                     {/* Active Filters */}
-                    {(hookSearchTitle || hookSearchLocation) && (
+                    {(searchTitle || searchLocation) && (
                         <div className="mt-4 flex items-center">
                             <span className={`text-sm font-medium ${paragraphTextClass} mr-2`}>
                                 Active filters:
                             </span>
-                            {hookSearchTitle && (
+                            {searchTitle && (
                                 <div className={`${filterTagClass} rounded-full px-3 py-1 text-sm flex items-center mr-2`}>
-                                    <span>Title: {hookSearchTitle}</span>
+                                    <span>Title: {searchTitle}</span>
                                     <button 
                                         onClick={handleClearFilters}
                                         className={`ml-2 ${filterIconClass}`}
@@ -592,9 +578,9 @@ export default function JobsPage() {
                                     </button>
                                 </div>
                             )}
-                            {hookSearchLocation && (
+                            {searchLocation && (
                                 <div className={`${filterTagClass} rounded-full px-3 py-1 text-sm flex items-center mr-2`}>
-                                    <span>Location: {hookSearchLocation}</span>
+                                    <span>Location: {searchLocation}</span>
                                     <button 
                                         onClick={handleClearFilters}
                                         className={`ml-2 ${filterIconClass}`}
@@ -614,44 +600,8 @@ export default function JobsPage() {
                 {/* Stats */}
                 <div className="flex flex-wrap justify-between items-center mb-8">
                     <div className={`font-medium ${statsTextClass}`}>
-                        {isConnected ? (
-                            <>
-                                Showing {indexOfFirstJob + 1}-{Math.min(indexOfLastJob, filteredJobs.length)} of {filteredJobs.length} jobs
-                                {(hookSearchTitle || hookSearchLocation) && <span className="ml-1">(filtered)</span>}
-                            </>
-                        ) : (
-                            <>
-                                Showing {Math.min(jobsPerPage, filteredJobs.length)} of {filteredJobs.length} jobs
-                                {!isConnected && filteredJobs.length > jobsPerPage && (
-                                    <span className={`ml-1 font-normal ${statsDimTextClass}`}>
-                                        (connect wallet to view all {filteredJobs.length} jobs)
-                                    </span>
-                                )}
-                            </>
-                        )}
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                        {isConnected && (
-                            <div className={`${isDark ? "bg-green-900 text-green-300" : "bg-green-50 text-green-800"} px-4 py-2 rounded-full text-sm font-medium flex items-center`}>
-                                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                Wallet Connected
-                                {walletAddress && (
-                                    <span className={`ml-2 text-xs ${isDark ? "bg-green-800" : "bg-green-100"} px-2 py-1 rounded-md`}>
-                                        {`${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                        
-                        {!isConnected && (
-                            <button
-                                onClick={handleConnect}
-                                className={`${buttonClass} text-white px-4 py-2 rounded-md text-sm font-medium transition-colors`}
-                            >
-                                Connect Wallet
-                            </button>
-                        )}
+                        Showing {indexOfFirstJob + 1}-{Math.min(indexOfLastJob, filteredJobs.length)} of {filteredJobs.length} jobs
+                        {(searchTitle || searchLocation) && <span className="ml-1">(filtered)</span>}
                     </div>
                 </div>
                 
@@ -661,11 +611,9 @@ export default function JobsPage() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={goToPreviousPage}
-                                disabled={currentPage === 1 || !isConnected}
+                                disabled={currentPage === 1}
                                 className={`p-2 rounded-md ${
-                                    currentPage === 1 || !isConnected
-                                        ? paginationDisabledClass
-                                        : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
+                                    currentPage === 1 ? paginationDisabledClass : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
                                 }`}
                                 aria-label="Previous page"
                             >
@@ -675,7 +623,7 @@ export default function JobsPage() {
                             </button>
                             
                             {/* For connected users - show full pagination */}
-                            {isConnected && (
+                            {connected && (
                                 <div className="hidden md:flex items-center gap-1">
                                     {getPageNumbers().map((page, index) => (
                                         typeof page === 'number' ? (
@@ -700,7 +648,7 @@ export default function JobsPage() {
                             )}
                             
                             {/* For non-connected users - show preview pagination with locks */}
-                            {!isConnected && filteredJobs.length > jobsPerPage && (
+                            {!connected && filteredJobs.length > jobsPerPage && (
                                 <div className="hidden md:flex items-center gap-1">
                                     {getPreviewPageNumbers().map((page, index) => (
                                         typeof page === 'number' ? (
@@ -734,11 +682,9 @@ export default function JobsPage() {
                             
                             <button
                                 onClick={goToNextPage}
-                                disabled={currentPage === totalPages || !isConnected}
+                                disabled={currentPage === totalPages}
                                 className={`p-2 rounded-md ${
-                                    currentPage === totalPages || !isConnected
-                                        ? paginationDisabledClass
-                                        : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
+                                    currentPage === totalPages ? paginationDisabledClass : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
                                 }`}
                                 aria-label="Next page"
                             >
@@ -747,71 +693,31 @@ export default function JobsPage() {
                                 </svg>
                             </button>
                         </div>
-                        
-                        {!isConnected && filteredJobs.length > jobsPerPage && (
-                            <button
-                                onClick={handleConnect}
-                                className={`text-sm ${isDark ? "text-blue-400" : "text-blue-600"} font-medium flex items-center`}
-                            >
-                                Connect wallet to access all pages
-                                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                        )}
                     </div>
                 )}
                 
                 {/* Show wallet connect message for non-connected users */}
-                {showConnectMessage && !isConnected && (
+                {showConnectMessage && !connected && (
                     <ConnectWalletBanner 
                         totalJobs={filteredJobs.length} 
-                        onConnect={handleConnect}
+                        onConnect={() => {}}
                         isDark={isDark}
                     />
                 )}
 
                 {/* Jobs Grid */}
-                {isLoading ? (
-                    // Loading skeleton
-                    <div className="space-y-6 mt-6">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg p-5 shadow-sm animate-pulse`}>
-                                <div className="flex flex-col md:flex-row items-start md:items-center">
-                                    <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-4">
-                                        <div className={`w-12 h-12 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded-full`}></div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className={`h-6 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded w-3/4 mb-2`}></div>
-                                        <div className={`h-4 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded w-1/2 mb-2`}></div>
-                                        <div className={`h-4 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded w-1/3`}></div>
-                                    </div>
-                                    <div className="flex flex-col items-end mt-4 md:mt-0 self-stretch justify-between">
-                                        <div className={`h-4 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded w-20 mb-2`}></div>
-                                        <div className={`h-8 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded w-24`}></div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : currentJobs.length > 0 ? (
-                    <div className="space-y-6 mt-6">
-                        {currentJobs.map(job => (
-                            <JobCard key={job.id} job={job} isDark={isDark} />
-                        ))}
-                    </div>
-                ) : (
+                {filteredJobs.length === 0 ? (
                     <div className={`text-center py-16 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
                         <svg className={`mx-auto h-12 w-12 ${isDark ? "text-gray-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <h3 className={`mt-4 text-lg font-medium ${isDark ? "text-gray-300" : "text-gray-900"}`}>No jobs found</h3>
                         <p className="mt-2 text-sm">
-                            {hookSearchTitle || hookSearchLocation 
+                            {searchTitle || searchLocation 
                                 ? 'Try adjusting your search filters or clear them to see all available jobs.' 
                                 : 'There are currently no job listings available.'}
                         </p>
-                        {(hookSearchTitle || hookSearchLocation) && (
+                        {(searchTitle || searchLocation) && (
                             <button
                                 onClick={handleClearFilters}
                                 className={`mt-4 px-4 py-2 ${buttonClass} text-white rounded-md font-medium`}
@@ -820,10 +726,26 @@ export default function JobsPage() {
                             </button>
                         )}
                     </div>
+                ) : (
+                    <div className="space-y-6 mt-6">
+                        {/* Show mock jobs from JSON */}
+                        {currentJobs.map((job) => (
+                            <JobCard key={job.id} job={job as any} isDark={isDark} />
+                        ))}
+                        {/* Show real jobs from Supabase at the end */}
+                        {supabaseJobs.length > 0 && (
+                            <>
+                                <h2 className="text-2xl font-bold mt-12 mb-4">Live Jobs</h2>
+                                {supabaseJobs.map((job: any) => (
+                                    <JobCard key={job.id} job={job as any} isDark={isDark} />
+                                ))}
+                            </>
+                        )}
+                    </div>
                 )}
                 
                 {/* Pagination controls - bottom (for connected users only) */}
-                {isConnected && filteredJobs.length > jobsPerPage && (
+                {connected && filteredJobs.length > jobsPerPage && (
                     <div className="flex justify-between items-center mt-8">
                         <div className={`font-medium ${statsTextClass}`}>
                             Page {currentPage} of {totalPages}
@@ -834,9 +756,7 @@ export default function JobsPage() {
                                 onClick={goToPreviousPage}
                                 disabled={currentPage === 1}
                                 className={`p-2 rounded-md ${
-                                    currentPage === 1 
-                                        ? paginationDisabledClass 
-                                        : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
+                                    currentPage === 1 ? paginationDisabledClass : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
                                 }`}
                                 aria-label="Previous page"
                             >
@@ -852,9 +772,7 @@ export default function JobsPage() {
                                             key={index}
                                             onClick={() => goToPage(page)}
                                             className={`w-8 h-8 flex items-center justify-center rounded-md ${
-                                                currentPage === page 
-                                                    ? paginationActiveClass 
-                                                    : paginationInactiveClass
+                                                currentPage === page ? paginationActiveClass : paginationInactiveClass
                                             }`}
                                         >
                                             {page}
@@ -871,9 +789,7 @@ export default function JobsPage() {
                                 onClick={goToNextPage}
                                 disabled={currentPage === totalPages}
                                 className={`p-2 rounded-md ${
-                                    currentPage === totalPages 
-                                        ? paginationDisabledClass 
-                                        : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
+                                    currentPage === totalPages ? paginationDisabledClass : isDark ? "text-blue-400 hover:bg-gray-800" : "text-blue-600 hover:bg-blue-50"
                                 }`}
                                 aria-label="Next page"
                             >

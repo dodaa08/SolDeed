@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppWalletProvider from "./components/WalletProvider/AppWalletProvider";
 import Header from "./components/landing/header";
-import Footer from "./components/landing/Footer";
 import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
@@ -35,7 +34,6 @@ export default function RootLayout({
         <AppWalletProvider>
           <Header />
           <main className="flex-grow">{children}</main>
-          <Footer />
         </AppWalletProvider>
         </ThemeProvider>
       </body>

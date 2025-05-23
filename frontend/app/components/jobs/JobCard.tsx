@@ -1,8 +1,14 @@
 "use client";
+
 import { type Job } from '@/app/hooks/useJobs';
 import { CompanyLogo } from './CompanyLogo';
 import { JobTag } from './JobTag';
-import { formatRelativeTime, formatCompensation, formatSeniority, formatWorkMode } from '@/app/utils/formatters';
+import {
+  formatRelativeTime,
+  formatCompensation,
+  formatSeniority,
+  formatWorkMode
+} from '@/app/utils/formatters';
 
 interface JobCardProps {
   job: Job;
@@ -10,7 +16,13 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, isDark = false }: JobCardProps) {
-  // Define conditional card styles based on theme
+  // Early return if job is invalid
+  if (!job) return null;
+
+  // Support both data shapes: organization.name/logo_url or company_name/logo
+  const companyName = (job as any).organization?.name ?? (job as any).company_name ?? 'Unknown Company';
+  const logoUrl = (job as any).organization?.logo_url ?? (job as any).logo ?? '';
+
   const cardBgClass = isDark
     ? job.highlighted 
       ? 'bg-blue-900/30 border-blue-700 ring-1 ring-blue-700'
@@ -18,7 +30,7 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
     : job.highlighted 
       ? 'bg-blue-50/30 border-blue-300 ring-1 ring-blue-300' 
       : 'bg-white border-gray-200';
-  
+
   const titleClass = isDark
     ? job.highlighted
       ? 'text-blue-300'
@@ -26,16 +38,16 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
     : job.highlighted
       ? 'text-blue-800'
       : 'text-gray-900';
-  
+
   const highlightBadgeClass = isDark
     ? 'bg-blue-900 text-blue-300'
     : 'bg-blue-100 text-blue-800';
-    
+
   const companyClass = isDark ? 'text-gray-300' : 'text-gray-700';
   const locationClass = isDark ? 'text-gray-300' : 'text-gray-700';
   const dividerClass = isDark ? 'text-gray-600' : 'text-gray-500';
   const postedClass = isDark ? 'text-gray-400' : 'text-gray-500';
-  
+
   const applyBtnClass = isDark
     ? job.highlighted
       ? 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-600'
@@ -49,8 +61,8 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
       <div className="flex flex-col md:flex-row items-start md:items-center">
         <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-4">
           <CompanyLogo 
-            company={job.organization.name} 
-            logoUrl={job.organization.logo_url}
+            company={companyName}
+            logoUrl={logoUrl}
           />
         </div>
         
@@ -64,7 +76,7 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
             )}
           </h3>
           <div className="flex flex-wrap gap-2 mb-2">
-            <span className={companyClass}>{job.organization.name}</span>
+            <span className={companyClass}>{companyName}</span>
             <span className={dividerClass}>•</span>
             <span className={locationClass}>
               {job.locations && job.locations.length > 0 
@@ -102,4 +114,4 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
       </div>
     </div>
   );
-} 
+}

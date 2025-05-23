@@ -1,5 +1,6 @@
 "use client"
 import LandingPage from "./(pages)/Landing/page"
+import Footer from './components/landing/Footer'
 
 
 export default function(){
@@ -7,7 +8,7 @@ export default function(){
     <>
     <div>
       <LandingPage />
-      
+      <Footer />
     </div>
     </>
   ) 
