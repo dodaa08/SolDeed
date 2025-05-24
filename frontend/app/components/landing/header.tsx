@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTheme } from "next-themes";
 import WalletConnectbtn from '../WalletProvider/WalletConnectbtn';
 import { MdOutlineDarkMode, MdOutlineLightMode } from "react-icons/md";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
     const [mounted, setMounted] = useState(false);
@@ -11,6 +12,7 @@ export default function Header() {
     const currentTheme = theme === 'system' ? systemTheme : theme;
     const isDark = currentTheme === 'dark';
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { data: session, status } = useSession();
 
     useEffect(() => {
         setMounted(true);
@@ -58,26 +60,42 @@ export default function Header() {
                             : "p-2 rounded-lg text-gray-600 hover:text-gray-900 transition-colors text-xl"}>
                         {mounted && isDark ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
                     </button>
-                    
-                    {/* Wallet Connect Button: always solid black */}
-                    <div className="flex items-center space-x-4">
                     <WalletConnectbtn />
+                    {status === "loading" ? null : session?.user ? (
+                        <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-700 dark:text-gray-200">{session.user.name || session.user.email}</span>
+                            <button
+                                onClick={() => signOut({ callbackUrl: "/" })}
+                                className="px-5  py-2 border-2 border-gray-700 text-white rounded hover:bg-red-600 text-sm"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <Link href="/auth/signin" className="py-2 px-5 rounded-lg border-2 border-gray-700 hover:bg-gray-900 transition duration-300 text-sm">
+                                Sign In
+                            </Link>
+                            <Link href="/auth/signup" className="py-2 px-5 rounded-lg border-2 border-gray-700 hover:bg-gray-900 transition duration-300 text-sm">
+                                Create Account
+                            </Link>
+                        </>
+                    )}
                     {/* Mobile menu button - hidden on desktop */}
                 </div>
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={toggleMobileMenu}
-                        className={`md:hidden p-2 rounded-lg ${
-                            mounted && isDark 
-                                ? 'text-gray-400 hover:text-white hover:bg-gray-800' 
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        } transition-colors`}>
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                </div>
+                {/* Mobile Menu Button */}
+                <button
+                    onClick={toggleMobileMenu}
+                    className={`md:hidden p-2 rounded-lg ${
+                        mounted && isDark 
+                            ? 'text-gray-400 hover:text-white hover:bg-gray-800' 
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    } transition-colors`}>
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
             </div>
 
             {/* Mobile Navigation Menu */}
@@ -102,6 +120,23 @@ export default function Header() {
                             } font-medium rounded-lg mx-2`}>
                             Post a Job
                         </Link>
+                        {status === "loading" ? null : session?.user ? (
+                            <button
+                                onClick={() => signOut({ callbackUrl: "/" })}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm mx-2 mt-2"
+                            >
+                                Sign Out
+                            </button>
+                        ) : (
+                            <>
+                                <Link href="/auth/signin" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm mx-2 mt-2">
+                                    Sign In
+                                </Link>
+                                <Link href="/auth/signup" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm mx-2 mt-2">
+                                    Sign Up
+                                </Link>
+                            </>
+                        )}
                     </nav>
                 </div>
             )}

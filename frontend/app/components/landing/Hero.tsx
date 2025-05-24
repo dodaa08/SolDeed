@@ -98,8 +98,8 @@ export default function Hero({ jobsState }: HeroProps) {
             
             // Add matching company names
             const matchingCompanies = allJobs
-                .filter(job => job.organization.name.toLowerCase().includes(term))
-                .map(job => job.organization.name);
+                .filter(job => job.organization.company_name.toLowerCase().includes(term))
+                .map(job => job.organization.company_name);
             jobSuggestions.push(...matchingCompanies);
             
             // Remove duplicates and sort

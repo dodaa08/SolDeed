@@ -1,9 +1,11 @@
+"use client";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppWalletProvider from "./components/WalletProvider/AppWalletProvider";
 import Header from "./components/landing/header";
 import { ThemeProvider } from "next-themes";
+import { SessionProvider } from "next-auth/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,11 +17,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Soldeed",
-  description: "Indeed on Solana",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,12 +27,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <AppWalletProvider>
-          <Header />
-          <main className="flex-grow">{children}</main>
-        </AppWalletProvider>
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <AppWalletProvider>
+              <Header />
+              <main className="flex-grow">{children}</main>
+            </AppWalletProvider>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );
