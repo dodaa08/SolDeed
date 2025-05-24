@@ -38,7 +38,31 @@ export function JobFetchCard({ jobId, isDark = false }: JobFetchCardProps) {
     fetchJob();
   }, [jobId]);
 
-  if (loading) return <div>Loading job...</div>;
+  if (loading) return (
+    <div className={`border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${isDark ? 'bg-black/120 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="flex flex-col md:flex-row items-start md:items-center animate-pulse">
+        <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-4">
+          <div className="w-10 h-10 rounded-md bg-gray-300 dark:bg-gray-700" />
+        </div>
+        <div className="flex-1 w-full">
+          <div className="h-5 w-1/2 mb-2 rounded bg-gray-300 dark:bg-gray-700" />
+          <div className="flex gap-2 mb-2">
+            <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-800" />
+            <div className="h-4 w-4 rounded bg-gray-200 dark:bg-gray-800" />
+            <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-800" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-4 w-16 rounded bg-gray-200 dark:bg-gray-800" />
+            <div className="h-4 w-12 rounded bg-gray-200 dark:bg-gray-800" />
+          </div>
+        </div>
+        <div className="flex flex-col items-end mt-4 md:mt-0 w-full md:w-auto">
+          <div className="h-4 w-20 mb-2 rounded bg-gray-200 dark:bg-gray-800" />
+          <div className="h-8 w-24 rounded bg-gray-300 dark:bg-gray-700" />
+        </div>
+      </div>
+    </div>
+  );
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (!job) return <div>No job found.</div>;
 
