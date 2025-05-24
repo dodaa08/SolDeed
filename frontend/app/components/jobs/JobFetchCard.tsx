@@ -9,16 +9,21 @@ import {
   formatSeniority,
   formatWorkMode
 } from '@/app/utils/formatters';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { TrashIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 interface JobFetchCardProps {
   jobId: string;
   isDark?: boolean;
+  userId?: string;
 }
 
-export function JobFetchCard({ jobId, isDark = false }: JobFetchCardProps) {
+export function JobFetchCard({ jobId, isDark = false, userId }: JobFetchCardProps) {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { publicKey } = useWallet();
 
   useEffect(() => {
     async function fetchJob() {
@@ -37,6 +42,40 @@ export function JobFetchCard({ jobId, isDark = false }: JobFetchCardProps) {
     }
     fetchJob();
   }, [jobId]);
+
+  const handleDelete = async () => {
+    // Custom toast confirmation
+    const confirmed = await new Promise<boolean>((resolve) => {
+      toast((t) => (
+        <span>
+          Are you sure you want to delete this job?
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => { toast.dismiss(t.id); resolve(true); }}
+              className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 text-xs"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => { toast.dismiss(t.id); resolve(false); }}
+              className="px-3 py-1 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 text-xs"
+            >
+              Cancel
+            </button>
+          </div>
+        </span>
+      ), { duration: 10000 });
+    });
+    if (!confirmed) return;
+    const res = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast.success('Job deleted!');
+      setJob(null);
+    } else {
+      const data = await res.json();
+      toast.error('Failed to delete job: ' + (data.error || 'Unknown error'));
+    }
+  };
 
   if (loading) return (
     <div className={`border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${isDark ? 'bg-black/120 border-gray-700' : 'bg-white border-gray-200'}`}>
@@ -86,8 +125,21 @@ export function JobFetchCard({ jobId, isDark = false }: JobFetchCardProps) {
     ? 'bg-gray-700 border border-gray-500 text-blue-400 hover:bg-gray-600'
     : 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-50';
 
+  const isOwner = userId && job && job.user_id && userId === job.user_id;
+
   return (
-    <div className={`border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${cardBgClass}`}>
+    <div className={`relative border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${cardBgClass}`}>
+      {/* Delete icon button for owner, top-right */}
+      {job && isOwner && (
+        <button
+          onClick={handleDelete}
+          className="absolute top-3 left-0 p-2 rounded-full bg-red-50  hover:bg-red-100 text-red-600 hover:text-red-800 transition-colors"
+          title="Delete Job"
+          aria-label="Delete Job"
+        >
+          <TrashIcon className="h-5 w-5" />
+        </button>
+      )}
       <div className="flex flex-col md:flex-row items-start md:items-center">
         <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-4">
           <CompanyLogo 

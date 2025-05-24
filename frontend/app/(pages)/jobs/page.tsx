@@ -756,7 +756,7 @@ export default function JobsPage() {
                         <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
                         <div className="space-y-4">
                             {jobsByYou.map(job => (
-                                <JobFetchCard key={job.id} jobId={job.id} isDark={isDark} />
+                                <JobFetchCard key={job.id} jobId={job.id} isDark={isDark} userId={userId} />
                             ))}
                         </div>
                     </section>
