@@ -9,7 +9,6 @@ import { useTheme } from "next-themes";
 import { useSupabaseJobs } from '@/app/hooks/useSupabaseJobs';
 import allJobsJson from '@/app/data/all_jobs.json';
 
-
 // Simple debounce function
 const useDebounce = <T,>(value: T, delay: number): T => {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -40,7 +39,7 @@ export default function JobsPage() {
     const [selectedLocationSuggestionIndex, setSelectedLocationSuggestionIndex] = useState(-1);
     const [currentPage, setCurrentPage] = useState(1);
     const [jobsPerPage] = useState(10);
-    const { connected } = useWallet();
+    const { connected, publicKey } = useWallet();
     const searchInputRef = useRef<HTMLInputElement>(null);
     const locationInputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -57,11 +56,22 @@ export default function JobsPage() {
     
     // Use allJobsJson for all jobs
     const allJobs = allJobsJson;
-    const filteredJobs = allJobs.filter(job => {
+    
+    // Combine all jobs (data file + supabase), then filter, sort, and paginate
+    const combinedJobs = [
+        ...allJobs,
+        ...supabaseJobs.filter(j => !allJobs.some(cj => cj.id === j.id)),
+    ];
+    const filteredCombinedJobs = combinedJobs.filter(job => {
         const titleMatch = searchTitle ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) : true;
         const locationMatch = searchLocation ? (job.locations && job.locations.some((loc: string) => loc.toLowerCase().includes(searchLocation.toLowerCase()))) : true;
         return titleMatch && locationMatch;
     });
+    const sortedCombinedJobs = filteredCombinedJobs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const totalPages = Math.ceil(sortedCombinedJobs.length / jobsPerPage);
+    const indexOfLastJob = currentPage * jobsPerPage;
+    const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+    const paginatedJobs = sortedCombinedJobs.slice(indexOfFirstJob, indexOfLastJob);
     
     // Conditional styling based on theme
     const mainBgClass = isDark ? "bg-black/120" : "bg-white";
@@ -260,20 +270,8 @@ export default function JobsPage() {
         }
     };
 
-    // Calculate pagination
-    const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
-    
     // Show preview of total pages even when not connected
     const visibleTotalPages = connected ? totalPages : Math.min(3, totalPages);
-    
-    // Get current jobs for pagination
-    const indexOfLastJob = currentPage * jobsPerPage;
-    const indexOfFirstJob = indexOfLastJob - jobsPerPage;
-    
-    // If connected, show jobs from current page, otherwise only show first page
-    const currentJobs = connected
-        ? filteredJobs.slice(indexOfFirstJob, indexOfLastJob)
-        : filteredJobs.slice(0, jobsPerPage);
     
     // Page navigation handlers
     const goToNextPage = () => {
@@ -601,13 +599,13 @@ export default function JobsPage() {
                 {/* Stats */}
                 <div className="flex flex-wrap justify-between items-center mb-8">
                     <div className={`font-medium ${statsTextClass}`}>
-                        Showing {indexOfFirstJob + 1}-{Math.min(indexOfLastJob, filteredJobs.length)} of {filteredJobs.length} jobs
+                        Showing {indexOfFirstJob + 1}-{Math.min(indexOfLastJob, sortedCombinedJobs.length)} of {sortedCombinedJobs.length} jobs
                         {(searchTitle || searchLocation) && <span className="ml-1">(filtered)</span>}
                     </div>
                 </div>
                 
                 {/* Pagination controls - top */}
-                {filteredJobs.length > jobsPerPage && (
+                {sortedCombinedJobs.length > jobsPerPage && (
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-2">
                             <button
@@ -649,7 +647,7 @@ export default function JobsPage() {
                             )}
                             
                             {/* For non-connected users - show preview pagination with locks */}
-                            {!connected && filteredJobs.length > jobsPerPage && (
+                            {!connected && sortedCombinedJobs.length > jobsPerPage && (
                                 <div className="hidden md:flex items-center gap-1">
                                     {getPreviewPageNumbers().map((page, index) => (
                                         typeof page === 'number' ? (
@@ -700,14 +698,14 @@ export default function JobsPage() {
                 {/* Show wallet connect message for non-connected users */}
                 {showConnectMessage && !connected && (
                     <ConnectWalletBanner 
-                        totalJobs={filteredJobs.length} 
+                        totalJobs={sortedCombinedJobs.length} 
                         onConnect={() => {}}
                         isDark={isDark}
                     />
                 )}
 
                 {/* Jobs Grid */}
-                {filteredJobs.length === 0 ? (
+                {sortedCombinedJobs.length === 0 ? (
                     <div className={`text-center py-16 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
                         <svg className={`mx-auto h-12 w-12 ${isDark ? "text-gray-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -729,24 +727,14 @@ export default function JobsPage() {
                     </div>
                 ) : (
                     <div className="space-y-6 mt-6">
-                        {/* Show mock jobs from JSON */}
-                        {currentJobs.map((job) => (
+                        {paginatedJobs.map((job) => (
                             <JobCard key={job.id} job={job as any} isDark={isDark} />
                         ))}
-                        {/* Show real jobs from Supabase at the end */}
-                        {supabaseJobs.length > 0 && (
-                            <>
-                                <h2 className="text-2xl font-bold mt-12 mb-4">Live Jobs</h2>
-                                {supabaseJobs.map((job: any) => (
-                                    <JobCard key={job.id} job={job as any} isDark={isDark} />
-                                ))}
-                            </>
-                        )}
                     </div>
                 )}
                 
                 {/* Pagination controls - bottom (for connected users only) */}
-                {connected && filteredJobs.length > jobsPerPage && (
+                {connected && sortedCombinedJobs.length > jobsPerPage && (
                     <div className="flex justify-between items-center mt-8">
                         <div className={`font-medium ${statsTextClass}`}>
                             Page {currentPage} of {totalPages}

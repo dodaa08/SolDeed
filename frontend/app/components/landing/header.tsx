@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useTheme } from "next-themes";
 import WalletConnectbtn from '../WalletProvider/WalletConnectbtn';
 import { MdOutlineDarkMode, MdOutlineLightMode } from "react-icons/md";
-import { useSession, signOut } from "next-auth/react";
+import { useSupabaseUser } from "@/app/hooks/useSupabaseUser";
+import { supabase } from "@/app/utils/supabaseClient";
+import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
+
 
 export default function Header() {
     const [mounted, setMounted] = useState(false);
@@ -12,7 +16,8 @@ export default function Header() {
     const currentTheme = theme === 'system' ? systemTheme : theme;
     const isDark = currentTheme === 'dark';
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const { data: session, status } = useSession();
+    const user = useSupabaseUser();
+    const router = useRouter();
 
     useEffect(() => {
         setMounted(true);
@@ -23,6 +28,7 @@ export default function Header() {
     };
 
     return (
+        <>
         <header className={mounted && isDark ? "bg-black/120 backdrop-blur-sm border-b border-gray-800 py-4 px-6 sticky top-0 z-50" : "bg-white backdrop-blur-sm shadow-sm py-4 px-6 sticky top-0 z-50"}>
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 {/* Logo */}
@@ -40,15 +46,24 @@ export default function Header() {
                 {/* Center Navigation */}
                 <div className="hidden md:flex items-center justify-center space-x-8">
                     <Link href="/jobs" className={mounted && isDark 
-                        ? "text-gray-300 hover:text-blue-400 font-medium transition-colors" 
-                        : "text-gray-700 hover:text-blue-600 font-medium transition-colors"}>
+                        ? "text-gray-300 hover:text-blue-400 cursor-pointer font-medium transition-colors" 
+                        : "text-gray-700 hover:text-blue-600 cursor-pointer font-medium transition-colors"}>
                         Jobs
                     </Link>
-                    <Link href="/post" className={mounted && isDark 
-                        ? "text-gray-300 hover:text-blue-400 font-medium transition-colors" 
-                        : "text-gray-700 hover:text-blue-600 font-medium transition-colors"}>
+                    <button
+                        onClick={() => {
+                            if (!user) {
+                                toast.error('Please sign in to post a job!');
+                            } else {
+                                router.push('/post');
+                            }
+                        }}
+                        className={mounted && isDark 
+                            ? "text-gray-300 hover:text-blue-400 cursor-pointer font-medium transition-colors" 
+                            : "text-gray-700 hover:text-blue-600 cursor-pointer font-medium transition-colors"}
+                    >
                         Post a Job
-                    </Link>
+                    </button>
                 </div>
 
                 {/* Right Section */}
@@ -61,15 +76,15 @@ export default function Header() {
                         {mounted && isDark ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
                     </button>
                     <WalletConnectbtn />
-                    {status === "loading" ? null : session?.user ? (
+                    { user ? (
                         <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-700 dark:text-gray-200">{session.user.name || session.user.email}</span>
                             <button
-                                onClick={() => signOut({ callbackUrl: "/" })}
-                                className="px-5  py-2 border-2 border-gray-700 text-white rounded hover:bg-red-600 text-sm"
+                                onClick={async () => { await supabase.auth.signOut(); }}
+                                className="px-5 py-2 border-2 border-gray-700 text-white rounded-xl cursor-pointer hover:bg-gray-900 transition duration-300 text-sm"
                             >
                                 Sign Out
                             </button>
+                            <span className="text-sm text-gray-700 dark:text-gray-200">{user.email}</span>
                         </div>
                     ) : (
                         <>
@@ -107,22 +122,30 @@ export default function Header() {
                         <Link href="/jobs" 
                             className={`px-4 py-2 ${
                                 mounted && isDark 
-                                    ? "text-gray-300 hover:bg-gray-800/50 hover:text-blue-400" 
-                                    : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                                    ? "text-gray-300 cursor-pointer hover:bg-gray-800/50 hover:text-blue-400" 
+                                    : "text-gray-700 cursor-pointer hover:bg-gray-100 hover:text-blue-600"
                             } font-medium rounded-lg mx-2`}>
                             Browse Jobs
                         </Link>
-                        <Link href="/post" 
+                        <button
+                            onClick={() => {
+                                if (!user) {
+                                    toast.error('Please sign in to post a job!');
+                                } else {
+                                    router.push('/post');
+                                }
+                            }}
                             className={`px-4 py-2 ${
                                 mounted && isDark 
                                     ? "text-gray-300 hover:bg-gray-800/50 hover:text-blue-400" 
                                     : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
-                            } font-medium rounded-lg mx-2`}>
+                            } font-medium rounded-lg mx-2`}
+                        >
                             Post a Job
-                        </Link>
-                        {status === "loading" ? null : session?.user ? (
+                        </button>
+                        { user ? (
                             <button
-                                onClick={() => signOut({ callbackUrl: "/" })}
+                                onClick={async () => { await supabase.auth.signOut(); }}
                                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm mx-2 mt-2"
                             >
                                 Sign Out
@@ -141,5 +164,7 @@ export default function Header() {
                 </div>
             )}
         </header>
+        <Toaster position="top-center" />
+        </>
     );
 }

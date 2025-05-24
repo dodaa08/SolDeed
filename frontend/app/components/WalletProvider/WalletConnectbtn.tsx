@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { PublicKey } from "@solana/web3.js";
 
 // Dynamically import the WalletMultiButton with SSR disabled to prevent hydration errors
 const WalletMultiButton = dynamic(

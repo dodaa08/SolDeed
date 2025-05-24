@@ -40,6 +40,18 @@ export default function JobListings({ jobsState }: JobListingsProps) {
     handleConnect,
   } = jobsState;
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const jobsPerPage = 10;
+
+  // Sort jobs oldest to newest (newest at the end)
+  const sortedJobs = jobs && jobs.length > 0
+    ? [...jobs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : [];
+
+  const totalPages = Math.ceil(sortedJobs.length / jobsPerPage);
+  const paginatedJobs = sortedJobs.slice((page - 1) * jobsPerPage, page * jobsPerPage);
+
   // Mount the component client-side to prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
@@ -118,11 +130,6 @@ export default function JobListings({ jobsState }: JobListingsProps) {
     };
   }, [connected]);
 
-  // Get the first 10 jobs to display
-  const displayJobs = jobs && jobs.length > 0 ? jobs.slice(0, 10) : [];
-  const totalJobs = filteredJobs.length;
-  const hasMoreJobs = filteredJobs.length > 10;
-
   return (
     <div id="job-listings" className={`${sectionBgClass} py-10`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -146,7 +153,7 @@ export default function JobListings({ jobsState }: JobListingsProps) {
         {/* Connect Wallet Banner - ConnectWalletBanner component should handle dark mode itself */}
         {!isConnected && (
           <ConnectWalletBanner 
-            totalJobs={totalJobs} 
+            totalJobs={sortedJobs.length} 
             onConnect={handleConnectWallet}
             isDark={mounted && isDark}
           />
@@ -168,10 +175,7 @@ export default function JobListings({ jobsState }: JobListingsProps) {
 
         {/* Display job count */}
         <div className={`mb-6 text-sm ${subTextClass}`}>
-          Showing {displayJobs.length} of {totalJobs} jobs
-          {!isConnected && totalJobs > 10 && (
-            <span className="ml-1">(connect wallet to see all jobs)</span>
-          )}
+          Showing {paginatedJobs.length} of {sortedJobs.length} jobs (Page {page} of {totalPages})
         </div>
 
         {/* Jobs Grid */}
@@ -196,8 +200,8 @@ export default function JobListings({ jobsState }: JobListingsProps) {
                 </div>
               </div>
             ))
-          ) : displayJobs.length > 0 ? (
-            displayJobs.map(job => (
+          ) : paginatedJobs.length > 0 ? (
+            paginatedJobs.map(job => (
               <JobCard key={job.id} job={job} isDark={mounted && isDark} />
             ))
           ) : (
@@ -207,8 +211,29 @@ export default function JobListings({ jobsState }: JobListingsProps) {
           )}
         </div>
 
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-6 space-x-2">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span>Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
         {/* View More Button */}
-        {hasMoreJobs && (
+        {sortedJobs.length > 10 && (
           <div className="mt-8 text-center">
             <button 
               onClick={isConnected ? viewMoreJobs : handleConnectWallet}
