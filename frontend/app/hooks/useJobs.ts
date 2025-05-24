@@ -77,8 +77,10 @@ export function useJobs(): UseJobsResult {
     
     return jobs.filter((job) => {
       const titleMatch = searchTitle 
-        ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) || 
-          job.organization.company_name.toLowerCase().includes(searchTitle.toLowerCase())
+        ? (
+            (typeof job.title === "string" && job.title.toLowerCase().includes(searchTitle.toLowerCase())) ||
+            (job.organization && typeof job.organization.company_name === "string" && job.organization.company_name.toLowerCase().includes(searchTitle.toLowerCase()))
+          )
         : true;
       
       const locationMatch = searchLocation 

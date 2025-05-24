@@ -69,8 +69,12 @@ export default function JobsPage() {
         ...supabaseJobs.filter(j => !allJobs.some(cj => cj.id === j.id)),
     ];
     const filteredCombinedJobs = combinedJobs.filter(job => {
-        const titleMatch = searchTitle ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) : true;
-        const locationMatch = searchLocation ? (job.locations && job.locations.some((loc: string) => loc.toLowerCase().includes(searchLocation.toLowerCase()))) : true;
+        const titleMatch = searchTitle
+            ? (job.title && job.title.toLowerCase().includes(searchTitle.toLowerCase()))
+            : true;
+        const locationMatch = searchLocation
+            ? (job.locations && job.locations.some((loc: string) => loc && loc.toLowerCase().includes(searchLocation.toLowerCase())))
+            : true;
         return titleMatch && locationMatch;
     });
     const sortedCombinedJobs = filteredCombinedJobs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());

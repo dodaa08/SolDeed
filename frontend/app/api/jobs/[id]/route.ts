@@ -6,7 +6,7 @@ function extractIdFromUrl(url: string) {
   const cleanUrl = url.split('?')[0].split('#')[0];
   // Remove trailing slash if present
   const trimmedUrl = cleanUrl.endsWith('/') ? cleanUrl.slice(0, -1) : cleanUrl;
-  const parts = trimmedUrl.split('/');
+  const parts = trimmedUrl.split('/');  
   return parts[parts.length - 1];
 }
 
