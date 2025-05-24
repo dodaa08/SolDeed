@@ -10,6 +10,7 @@ import { useSupabaseJobs } from '@/app/hooks/useSupabaseJobs';
 import allJobsJson from '@/app/data/all_jobs.json';
 import { supabase } from '@/app/utils/supabaseClient';
 
+
 // Simple debounce function
 const useDebounce = <T,>(value: T, delay: number): T => {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -61,10 +62,17 @@ export default function JobsPage() {
     // Use allJobsJson for all jobs
     const allJobs = allJobsJson;
     
-    // Combine all jobs (data file + supabase), then filter, sort, and paginate
+    // Only filter Supabase jobs for validity
+    const validSupabaseJobs = supabaseJobs.filter(job =>
+        typeof job.company_name === 'string' && job.company_name.trim().length >= 2 &&
+        typeof job.position === 'string' && job.position.trim().length >= 2 &&
+        typeof job.location === 'string' && job.location.trim().length >= 2 &&
+        typeof job.apply_url === 'string' && job.apply_url.trim().length >= 5
+    );
+    // Combine all data file jobs (unfiltered) with only valid Supabase jobs
     const combinedJobs = [
         ...allJobs,
-        ...supabaseJobs.filter(j => !allJobs.some(cj => cj.id === j.id)),
+        ...validSupabaseJobs.filter(j => !allJobs.some(cj => cj.id === j.id)),
     ];
     const filteredCombinedJobs = combinedJobs.filter(job => {
         const titleMatch = searchTitle ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) : true;
@@ -618,7 +626,7 @@ export default function JobsPage() {
             
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-10">
                 {/* Jobs Created by You Section */}
-                {walletAddress && jobsByYou.length > 0 && (
+                {/* {walletAddress && jobsByYou.length > 0 && (
                     <section className="mb-8">
                         <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
                         <div className="space-y-4">
@@ -627,7 +635,7 @@ export default function JobsPage() {
                             ))}
                         </div>
                     </section>
-                )}
+                )} */}
                 {/* Stats */}
                 <div className="flex flex-wrap justify-between items-center mb-8">
                     <div className={`font-medium ${statsTextClass}`}>

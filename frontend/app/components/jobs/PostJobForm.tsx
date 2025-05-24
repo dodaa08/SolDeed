@@ -45,9 +45,17 @@ export default function PostJobForm() {
     setSuccess("");
     setError("");
 
-    // Basic validation
-    if (!form.company_name || !form.position || !form.job_description || !form.type || !form.primary_tag || !form.location || !form.apply_url) {
-      setError("Please fill in all required fields.");
+    // Stricter validation
+    if (
+      !form.company_name.trim() || form.company_name.trim().length < 2 ||
+      !form.position.trim() || form.position.trim().length < 2 ||
+      !form.job_description.trim() || form.job_description.trim().length < 10 ||
+      !form.type.trim() ||
+      !form.primary_tag.trim() ||
+      !form.location.trim() || form.location.trim().length < 2 ||
+      !form.apply_url.trim()
+    ) {
+      setError("Please fill in all required fields with valid information.");
       setLoading(false);
       return;
     }
