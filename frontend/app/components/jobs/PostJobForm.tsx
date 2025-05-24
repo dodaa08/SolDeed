@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import { useWallet } from '@solana/wallet-adapter-react';
 
 const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Internship", "Freelance"];
 
@@ -10,6 +11,8 @@ export default function PostJobForm() {
   const { systemTheme, theme } = useTheme();
   const currentTheme = theme === "system" ? systemTheme : theme;
   const isDark = currentTheme === "dark";
+  const { publicKey } = useWallet();
+  const walletAddress = publicKey?.toString() || '';
 
   const [form, setForm] = useState({
     company_name: "",
@@ -59,6 +62,7 @@ export default function PostJobForm() {
     body.append("location", form.location);
     body.append("apply_url", form.apply_url);
     if (form.logo) body.append("logo", form.logo);
+    body.append("wallet_address", walletAddress);
 
     try {
       const res = await fetch("/api/jobs", {

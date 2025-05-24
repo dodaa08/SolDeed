@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/app/utils/supabaseClient";
 
-
-
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
 
@@ -16,7 +14,26 @@ export async function POST(req: NextRequest) {
   // For now, skip logo upload and just store null
   const logo = null;
 
-  // Insert into jobs table
+  // 1. Get wallet address from the request/session (you must pass it from the frontend)
+  const wallet_address = formData.get("wallet_address") as string;
+  if (!wallet_address) {
+    return NextResponse.json({ error: "Missing wallet address." }, { status: 400 });
+  }
+
+  // 2. Look up user_id in users_walletA
+  const { data: userRows, error: userError } = await supabase
+    .from("users_walletA")
+    .select("id")
+    .eq("walletaddress", wallet_address)
+    .single();
+
+  if (userError || !userRows) {
+    return NextResponse.json({ error: "User not found." }, { status: 400 });
+  }
+
+  const user_id = userRows.id;
+
+  // 3. Insert into jobs table with user_id
   const { error } = await supabase.from("jobs").insert([
     {
       company_name,
@@ -27,6 +44,7 @@ export async function POST(req: NextRequest) {
       location,
       apply_url,
       logo,
+      user_id, // <-- This is required!
     },
   ]);
 

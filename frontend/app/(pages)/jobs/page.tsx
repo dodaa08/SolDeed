@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { useJobs } from '@/app/hooks/useJobs';
@@ -8,6 +8,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useTheme } from "next-themes";
 import { useSupabaseJobs } from '@/app/hooks/useSupabaseJobs';
 import allJobsJson from '@/app/data/all_jobs.json';
+import { supabase } from '@/app/utils/supabaseClient';
 
 // Simple debounce function
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -44,6 +45,9 @@ export default function JobsPage() {
     const locationInputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const locationSuggestionsRef = useRef<HTMLDivElement>(null);
+    const [usersWalletA, setUsersWalletA] = useState<any[]>([]);
+    const [allDbJobs, setAllDbJobs] = useState<any[]>([]);
+    const [showCreatedByYou, setShowCreatedByYou] = useState(false);
     
     // Apply debounce to search terms
     const debouncedSearchTerm = useDebounce(searchTitle, 300);
@@ -432,7 +436,24 @@ export default function JobsPage() {
 
     const [mounted, setMounted] = useState(false);
     useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        async function fetchUsersWalletA() {
+            const { data: usersWalletAData } = await supabase.from('users_walletA').select('*');
+            setUsersWalletA(usersWalletAData || []);
+        }
+        async function fetchAllDbJobs() {
+            const { data: jobsData } = await supabase.from('jobs').select('*');
+            setAllDbJobs(jobsData || []);
+        }
+        fetchUsersWalletA();
+        fetchAllDbJobs();
+    }, []);
     if (!mounted) return null;
+
+    const walletAddress = publicKey?.toString() || null;
+    const userWallet = usersWalletA.find(u => u.walletaddress === walletAddress);
+    const userId = userWallet?.id;
+    const jobsByYou = allDbJobs.filter(job => job.user_id === userId);
 
     return (
         <main className={mainBgClass + " min-h-screen"}>
@@ -596,13 +617,48 @@ export default function JobsPage() {
             </div>
             
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-10">
+                {/* Jobs Created by You Section */}
+                {walletAddress && jobsByYou.length > 0 && (
+                    <section className="mb-8">
+                        <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
+                        <div className="space-y-4">
+                            {jobsByYou.map(job => (
+                                <JobCard key={job.id} job={job} isDark={isDark} />
+                            ))}
+                        </div>
+                    </section>
+                )}
                 {/* Stats */}
                 <div className="flex flex-wrap justify-between items-center mb-8">
                     <div className={`font-medium ${statsTextClass}`}>
                         Showing {indexOfFirstJob + 1}-{Math.min(indexOfLastJob, sortedCombinedJobs.length)} of {sortedCombinedJobs.length} jobs
                         {(searchTitle || searchLocation) && <span className="ml-1">(filtered)</span>}
                     </div>
+                    <button
+                        className="ml-4 flex items-center gap-2 px-5 py-2 border-2 border-gray-700 cursor-pointer hover:bg-gray-900 text-white rounded-full shadow-md hover:from-blue-600 hover:to-blue-800 focus:outline-none  transition duration-200"
+                        onClick={() => setShowCreatedByYou((prev) => !prev)}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {showCreatedByYou ? "Hide" : "Show"} jobs created by you
+                    </button>
                 </div>
+                
+                {showCreatedByYou && (
+                    jobsByYou.length > 0 ? (
+                        <section className="mb-8">
+                            <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
+                            <div className="space-y-4">
+                                {jobsByYou.map(job => (
+                                    <JobCard key={job.id} job={job} isDark={isDark} />
+                                ))}
+                            </div>
+                        </section>
+                    ) : (
+                        <div className="mb-8 text-center text-lg text-gray-500">No jobs created by you <span role="img" aria-label="sweat smile">😅</span></div>
+                    )
+                )}
                 
                 {/* Pagination controls - top */}
                 {sortedCombinedJobs.length > jobsPerPage && (

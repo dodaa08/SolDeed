@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
+  useWallet,
 } from "@solana/wallet-adapter-react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
@@ -12,9 +13,30 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
+import { supabase } from '@/app/utils/supabaseClient';
 
 // Default styles that can be overridden by your app
 import "@solana/wallet-adapter-react-ui/styles.css";
+
+function WalletAutoRegister() {
+  const { publicKey, connected } = useWallet();
+  useEffect(() => {
+    const walletAddress = publicKey?.toString();
+    if (connected && walletAddress) {
+      (async () => {
+        const { data } = await supabase
+          .from('users_walletA')
+          .select('id')
+          .eq('walletaddress', walletAddress)
+          .single();
+        if (!data) {
+          await supabase.from('users_walletA').insert([{ walletaddress: walletAddress }]);
+        }
+      })();
+    }
+  }, [connected, publicKey]);
+  return null;
+}
 
 export default function AppWalletProvider({
     children,
@@ -38,7 +60,10 @@ export default function AppWalletProvider({
     return (
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
-          <WalletModalProvider>{children}</WalletModalProvider>
+          <WalletModalProvider>
+            <WalletAutoRegister />
+            {children}
+          </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>
     );
