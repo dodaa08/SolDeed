@@ -74,7 +74,11 @@ export default function JobsPage() {
         return titleMatch && locationMatch;
     });
     const sortedCombinedJobs = filteredCombinedJobs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const totalPages = Math.ceil(sortedCombinedJobs.length / jobsPerPage);
+    const walletAddress = publicKey?.toString() || null;
+    const userWallet = usersWalletA.find(u => u.walletaddress === walletAddress);
+    const userId = userWallet?.id;
+    const jobsByYou = allDbJobs.filter(job => job.user_id === userId);
+    const totalPages = Math.ceil(sortedCombinedJobs.length / jobsPerPage) + (jobsByYou.length > 0 ? 1 : 0);
     const indexOfLastJob = currentPage * jobsPerPage;
     const indexOfFirstJob = indexOfLastJob - jobsPerPage;
     const paginatedJobs = sortedCombinedJobs.slice(indexOfFirstJob, indexOfLastJob);
@@ -455,11 +459,6 @@ export default function JobsPage() {
     }, []);
     if (!mounted) return null;
 
-    const walletAddress = publicKey?.toString() || null;
-    const userWallet = usersWalletA.find(u => u.walletaddress === walletAddress);
-    const userId = userWallet?.id;
-    const jobsByYou = allDbJobs.filter(job => job.user_id === userId);
-
     return (
         <main className={mainBgClass + " min-h-screen"}>
             {/* Page Header */}
@@ -620,50 +619,36 @@ export default function JobsPage() {
                     )}
                 </div>
             </div>
+
+            <div className="max-w-7xl mx-auto flex justify-end px-4 md:px-6 mt-2">
+
+            
+            </div>
             
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-10">
-                {/* Jobs Created by You Section */}
-                {/* {walletAddress && jobsByYou.length > 0 && (
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
-                        <div className="space-y-4">
-                            {jobsByYou.map(job => (
-                                <JobCard key={job.id} job={job} isDark={isDark} />
-                            ))}
-                        </div>
-                    </section>
-                )} */}
                 {/* Stats */}
                 <div className="flex flex-wrap justify-between items-center mb-8">
                     <div className={`font-medium ${statsTextClass}`}>
                         Showing {indexOfFirstJob + 1}-{Math.min(indexOfLastJob, sortedCombinedJobs.length)} of {sortedCombinedJobs.length} jobs
                         {(searchTitle || searchLocation) && <span className="ml-1">(filtered)</span>}
                     </div>
+
+<div className='flex justify-end'>
+                     {jobsByYou.length > 0 && (
                     <button
-                        className="ml-4 flex items-center gap-2 px-5 py-2 border-2 border-gray-700 cursor-pointer hover:bg-gray-900 text-white rounded-full shadow-md hover:from-blue-600 hover:to-blue-800 focus:outline-none  transition duration-200"
-                        onClick={() => setShowCreatedByYou((prev) => !prev)}
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className={`mb-4 px-4 py-2 rounded font-semibold transition-colors duration-200 shadow-md ml-2 ${
+                            currentPage === totalPages
+                                ? 'border-2 border-gray-800 rounded-xl  bg-gray-800 text-white'
+                                : 'border-2 border-gray-700 rounded-xl cursor-pointer text-white hover:bg-gray-900 transition-colors duration-200'
+                        }`}
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        {showCreatedByYou ? "Hide" : "Show"} jobs created by you
+                        Show Jobs Created by You
                     </button>
-                </div>
-                
-                {showCreatedByYou && (
-                    jobsByYou.length > 0 ? (
-                        <section className="mb-8">
-                            <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
-                            <div className="space-y-4">
-                                {jobsByYou.map(job => (
-                                    <JobFetchCard key={job.id} jobId={job.id} isDark={isDark} />
-                                ))}
-                            </div>
-                        </section>
-                    ) : (
-                        <div className="mb-8 text-center text-lg text-gray-500">No jobs created by you <span role="img" aria-label="sweat smile">😅</span></div>
-                    )
                 )}
+</div>
+                </div>
                 
                 {/* Pagination controls - top */}
                 {sortedCombinedJobs.length > jobsPerPage && (
@@ -766,30 +751,19 @@ export default function JobsPage() {
                 )}
 
                 {/* Jobs Grid */}
-                {sortedCombinedJobs.length === 0 ? (
-                    <div className={`text-center py-16 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                        <svg className={`mx-auto h-12 w-12 ${isDark ? "text-gray-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h3 className={`mt-4 text-lg font-medium ${isDark ? "text-gray-300" : "text-gray-900"}`}>No jobs found</h3>
-                        <p className="mt-2 text-sm">
-                            {searchTitle || searchLocation 
-                                ? 'Try adjusting your search filters or clear them to see all available jobs.' 
-                                : 'There are currently no job listings available.'}
-                        </p>
-                        {(searchTitle || searchLocation) && (
-                            <button
-                                onClick={handleClearFilters}
-                                className={`mt-4 px-4 py-2 ${buttonClass} text-white rounded-md font-medium`}
-                            >
-                                Clear Filters
-                            </button>
-                        )}
-                    </div>
+                {currentPage === totalPages && jobsByYou.length > 0 ? (
+                    <section className="mb-8">
+                        <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
+                        <div className="space-y-4">
+                            {jobsByYou.map(job => (
+                                <JobFetchCard key={job.id} jobId={job.id} isDark={isDark} />
+                            ))}
+                        </div>
+                    </section>
                 ) : (
                     <div className="space-y-6 mt-6">
                         {paginatedJobs.map((job) => (
-                            <JobCard key={job.id} job={job as any} isDark={isDark} />
+                            <JobCard key={job.id} job={job} isDark={isDark} />
                         ))}
                     </div>
                 )}
@@ -850,6 +824,9 @@ export default function JobsPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Add the button above the jobs grid */}
+               
             </div>
         </main>
     );
