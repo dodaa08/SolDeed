@@ -9,6 +9,7 @@ import { useTheme } from "next-themes";
 import { useSupabaseJobs } from '@/app/hooks/useSupabaseJobs';
 import allJobsJson from '@/app/data/all_jobs.json';
 import { supabase } from '@/app/utils/supabaseClient';
+import { JobFetchCard } from '@/app/components/jobs/JobFetchCard';
 
 
 // Simple debounce function
@@ -62,17 +63,10 @@ export default function JobsPage() {
     // Use allJobsJson for all jobs
     const allJobs = allJobsJson;
     
-    // Only filter Supabase jobs for validity
-    const validSupabaseJobs = supabaseJobs.filter(job =>
-        typeof job.company_name === 'string' && job.company_name.trim().length >= 2 &&
-        typeof job.position === 'string' && job.position.trim().length >= 2 &&
-        typeof job.location === 'string' && job.location.trim().length >= 2 &&
-        typeof job.apply_url === 'string' && job.apply_url.trim().length >= 5
-    );
-    // Combine all data file jobs (unfiltered) with only valid Supabase jobs
+    // Combine all jobs (data file + supabase), then filter, sort, and paginate
     const combinedJobs = [
         ...allJobs,
-        ...validSupabaseJobs.filter(j => !allJobs.some(cj => cj.id === j.id)),
+        ...supabaseJobs.filter(j => !allJobs.some(cj => cj.id === j.id)),
     ];
     const filteredCombinedJobs = combinedJobs.filter(job => {
         const titleMatch = searchTitle ? job.title.toLowerCase().includes(searchTitle.toLowerCase()) : true;
@@ -450,7 +444,10 @@ export default function JobsPage() {
             setUsersWalletA(usersWalletAData || []);
         }
         async function fetchAllDbJobs() {
-            const { data: jobsData } = await supabase.from('jobs').select('*');
+            // Use official Supabase docs pattern for fetching all jobs
+            const { data: jobsData, error } = await supabase
+                .from('jobs')
+                .select('*');
             setAllDbJobs(jobsData || []);
         }
         fetchUsersWalletA();
@@ -659,7 +656,7 @@ export default function JobsPage() {
                             <h2 className="text-xl font-bold mb-2">Jobs Created by You ({jobsByYou.length})</h2>
                             <div className="space-y-4">
                                 {jobsByYou.map(job => (
-                                    <JobCard key={job.id} job={job} isDark={isDark} />
+                                    <JobFetchCard key={job.id} jobId={job.id} isDark={isDark} />
                                 ))}
                             </div>
                         </section>

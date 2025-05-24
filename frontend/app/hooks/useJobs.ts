@@ -7,7 +7,7 @@ export interface Job {
   id: number;
   title: string;
   slug: string;
-  url: string;
+  apply_url: string;
   created_at: number;
   work_mode: string | null;
   seniority: string | null;

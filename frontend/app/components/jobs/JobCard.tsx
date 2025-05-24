@@ -105,7 +105,7 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
         
         <div className="flex flex-col items-end mt-4 md:mt-0 self-stretch justify-between w-full md:w-auto">
           <span className={`text-sm mb-2 md:mb-4 ${postedClass}`}>Posted {formatRelativeTime(job.created_at)}</span>
-          <a href={job.url} target="_blank" rel="noopener noreferrer">
+          <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
             <button className={`px-4 py-2 rounded transition-colors text-sm font-medium ${applyBtnClass}`}>
               Apply Now
             </button>
