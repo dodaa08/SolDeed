@@ -27,6 +27,8 @@ export default function PostJobForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [logoInputType, setLogoInputType] = useState<'upload' | 'url'>('upload');
+  const [logoUrl, setLogoUrl] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -61,7 +63,11 @@ export default function PostJobForm() {
     body.append("primary_tag", form.primary_tag);
     body.append("location", form.location);
     body.append("apply_url", form.apply_url);
-    if (form.logo) body.append("logo", form.logo);
+    if (logoInputType === 'url' && logoUrl) {
+      body.append('logo_url', logoUrl);
+    } else if (form.logo) {
+      body.append("logo", form.logo);
+    }
     body.append("wallet_address", walletAddress);
 
     try {
@@ -188,13 +194,44 @@ export default function PostJobForm() {
         </div>
         <div className="md:col-span-2">
           <label className={`block mb-1 font-medium ${labelClass}`}>Logo</label>
-          <input
-            name="logo"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className={`w-full rounded-lg border px-3 py-2 ${inputClass}`}
-          />
+          <div className="flex gap-4 mb-2">
+            <label>
+              <input
+                type="radio"
+                name="logoInputType"
+                value="upload"
+                checked={logoInputType === 'upload'}
+                onChange={() => setLogoInputType('upload')}
+              /> Upload
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="logoInputType"
+                value="url"
+                checked={logoInputType === 'url'}
+                onChange={() => setLogoInputType('url')}
+              /> Paste URL
+            </label>
+          </div>
+          {logoInputType === 'upload' ? (
+            <input
+              name="logo"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className={`w-full rounded-lg border px-3 py-2 ${inputClass}`}
+            />
+          ) : (
+            <input
+              name="logoUrl"
+              type="url"
+              placeholder="https://example.com/logo.png"
+              value={logoUrl}
+              onChange={e => setLogoUrl(e.target.value)}
+              className={`w-full rounded-lg border px-3 py-2 ${inputClass}`}
+            />
+          )}
         </div>
       </div>
       <button type="submit" className={buttonClass} disabled={loading}>
