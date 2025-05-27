@@ -158,9 +158,11 @@ export default function Header() {
                             : "p-2 rounded-lg text-gray-600 cursor-pointer hover:text-gray-900 transition-colors text-xl"}>
                         {mounted && isDark ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
                     </button>
-                    <WalletConnectbtn />
                     { user ? (
-                        <ProfileDropdown user={user} onSignOut={async () => { await supabase.auth.signOut(); }} />
+                        <>
+                            <WalletConnectbtn />
+                            <ProfileDropdown user={user} onSignOut={async () => { await supabase.auth.signOut(); }} />
+                        </>
                     ) : (
                         <>
                             <Link href="/auth/signin" className={
