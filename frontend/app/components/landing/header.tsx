@@ -119,9 +119,9 @@ export default function Header() {
         <header
           className={
             (isDark
-              ? "bg-black/120 text-white"
-              : "bg-white text-black") +
-            " backdrop-blur-sm  border-gray-800 py-4 px-6 sticky top-0 z-50"
+              ? "bg-black/120 text-white border-b border-gray-800"
+              : "bg-white text-black border-b border-gray-200") +
+            " backdrop-blur-sm  py-4 px-6 sticky top-0 z-50"
           }
         >
             <div className="max-w-7xl mx-auto flex justify-between items-center">
