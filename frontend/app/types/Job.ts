@@ -10,4 +10,5 @@ export interface Job {
   apply_url: string;
   logo?: string | null;
   user_id?: string;
+  tags?: string[] | string;
 } 

@@ -12,8 +12,9 @@ interface JobListingsProps {
   jobsState: UseJobsResult;
 }
 
+
 export default function JobListings({ jobsState }: JobListingsProps) {
-  const router = useRouter();
+  const router = useRouter(); 
   const [mounted, setMounted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -199,7 +200,7 @@ export default function JobListings({ jobsState }: JobListingsProps) {
                   </div>
                 </div>
               </div>
-            ))
+            ))  
           ) : paginatedJobs.length > 0 ? (
             paginatedJobs.map(job => (
               <JobCard key={job.id} job={job} isDark={mounted && isDark} />

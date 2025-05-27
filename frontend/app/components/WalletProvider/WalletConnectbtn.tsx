@@ -71,16 +71,19 @@ export default function WalletConnectButton() {
         }
         
         /* Override the default wallet button styles */
-        .wallet-adapter-button {
-          background-color:rgb(51, 56, 63) !important;
-          transition: all 0.2s ease !important;
+        html.light .wallet-adapter-button {
+          background-color: #a21caf !important; /* Tailwind purple-700 */
+          color: #fff !important;
+          border: none !important;
         }
-        
-        .wallet-adapter-button:hover {
-          background-color: #333333 !important;
+        html.light .wallet-adapter-button:hover {
+          background-color: #86198f !important; /* Tailwind purple-800 */
         }
-        
-        .wallet-adapter-button:not([disabled]):hover {
+        html.dark .wallet-adapter-button {
+          background-color: rgb(51, 56, 63) !important;
+          color: #fff !important;
+        }
+        html.dark .wallet-adapter-button:hover {
           background-color: #333333 !important;
         }
         

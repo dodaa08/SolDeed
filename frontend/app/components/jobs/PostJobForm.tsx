@@ -19,20 +19,26 @@ export default function PostJobForm() {
     position: "",
     job_description: "",
     type: "Full-time",
-    primary_tag: "",
     location: "",
     apply_url: "",
     logo: null as File | null,
+    tags: [] as string[],
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [logoInputType, setLogoInputType] = useState<'upload' | 'url'>('upload');
   const [logoUrl, setLogoUrl] = useState('');
+  const [tagsInput, setTagsInput] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "tags") {
+      setTagsInput(value);
+      setForm((prev) => ({ ...prev, tags: value.split(',').map(t => t.trim()).filter(Boolean) }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +54,7 @@ export default function PostJobForm() {
     setError("");
 
     // Basic validation
-    if (!form.company_name || !form.position || !form.job_description || !form.type || !form.primary_tag || !form.location || !form.apply_url) {
+    if (!form.company_name || !form.position || !form.job_description || !form.type || !form.tags.length || !form.location || !form.apply_url) {
       setError("Please fill in all required fields.");
       setLoading(false);
       return;
@@ -60,7 +66,7 @@ export default function PostJobForm() {
     body.append("position", form.position);
     body.append("job_description", form.job_description);
     body.append("type", form.type);
-    body.append("primary_tag", form.primary_tag);
+    body.append("tags", JSON.stringify(form.tags));
     body.append("location", form.location);
     body.append("apply_url", form.apply_url);
     if (logoInputType === 'url' && logoUrl) {
@@ -83,11 +89,12 @@ export default function PostJobForm() {
           position: "",
           job_description: "",
           type: "Full-time",
-          primary_tag: "",
           location: "",
           apply_url: "",
           logo: null,
+          tags: [],
         });
+        setTagsInput("");
         router.push("/jobs");
       } else {
         setError(data.error || "Failed to post job.");
@@ -163,12 +170,13 @@ export default function PostJobForm() {
           </select>
         </div>
         <div>
-          <label className={`block mb-1 font-medium ${labelClass}`}>Primary Tag *</label>
+          <label className={`block mb-1 font-medium ${labelClass}`}>Tags (comma separated) *</label>
           <input
-            name="primary_tag"
-            value={form.primary_tag}
+            name="tags"
+            value={tagsInput}
             onChange={handleChange}
             className={`w-full rounded-lg border px-3 py-2 ${inputClass}`}
+            placeholder="e.g. Remote, FullStack, React"
             required
           />
         </div>

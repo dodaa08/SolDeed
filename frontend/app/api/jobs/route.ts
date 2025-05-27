@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
   const position = formData.get("position") as string;
   const job_description = formData.get("job_description") as string;
   const type = formData.get("type") as string;
-  const primary_tag = formData.get("primary_tag") as string;
+  const tagsRaw = formData.get("tags") as string;
+  let tags: string[] = [];
+  try {
+    tags = JSON.parse(tagsRaw);
+  } catch {
+    tags = [];
+  }
   const location = formData.get("location") as string;
   const apply_url = formData.get("apply_url") as string;
 
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest) {
       position,
       job_description,
       type,
-      primary_tag,
+      tags,
       location,
       apply_url,
       logo: logoUrl,

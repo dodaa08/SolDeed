@@ -10,7 +10,7 @@ import { useSupabaseJobs } from '@/app/hooks/useSupabaseJobs';
 import allJobsJson from '@/app/data/all_jobs.json';
 import { supabase } from '@/app/utils/supabaseClient';
 import { JobFetchCard } from '@/app/components/jobs/JobFetchCard';
-
+ 
 
 // Simple debounce function
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -103,7 +103,7 @@ export default function JobsPage() {
     const paginationActiveClass = isDark ? "bg-blue-700 text-white" : "bg-blue-600 text-white";
     const paginationInactiveClass = isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-700 hover:bg-blue-50";
     const paginationDisabledClass = isDark ? "text-gray-700 cursor-not-allowed" : "text-gray-300 cursor-not-allowed";
-    const paginationPreviewClass = isDark ? "bg-gray-800 text-gray-500" : "bg-gray-100 text-gray-400";
+    const paginationPreviewClass = isDark ?  "bg-gray-800 text-gray-500" : "bg-gray-100 text-gray-400";
     const suggestionsBgClass = isDark ? "bg-black/120 border-gray-700" : "bg-white border-gray-200";
     const suggestionItemClass = isDark ? "hover:bg-gray-700 text-gray-200" : "hover:bg-blue-50 text-gray-800";
     const selectedSuggestionClass = isDark ? "bg-gray-700" : "bg-blue-50";
@@ -639,17 +639,35 @@ export default function JobsPage() {
 
 <div className='flex justify-end'>
                      {jobsByYou.length > 0 && (
-                    <button
+                    <>
+                      <button
                         onClick={() => setCurrentPage(totalPages)}
                         disabled={currentPage === totalPages}
                         className={`mb-4 px-4 py-2 rounded font-semibold transition-colors duration-200 shadow-md ml-2 ${
-                            currentPage === totalPages
-                                ? 'border-2 border-gray-800 rounded-xl  bg-gray-800 text-white'
-                                : 'border-2 border-gray-700 rounded-xl cursor-pointer text-white hover:bg-gray-900 transition-colors duration-200'
+                          isDark
+                            ? (currentPage === totalPages
+                                ? 'border-2 border-gray-800 rounded-xl bg-gray-800 text-white'
+                                : 'border-2 border-gray-700 rounded-xl cursor-pointer text-white bg-gray-900 hover:bg-gray-800 transition-colors duration-200')
+                            : (currentPage === totalPages
+                                ? 'border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-100  rounded-xl'
+                                : 'border-2 border-blue-600 rounded-xl cursor-pointer text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200')
                         }`}
-                    >
+                      >
                         Show Jobs Created by You
-                    </button>
+                      </button>
+                      {currentPage === totalPages && (
+                        <button
+                          onClick={() => setCurrentPage(1)}
+                          className={`mb-4 px-5 py-2 rounded-xl cursor-pointer font-semibold transition-colors duration-200 shadow-md ml-2 ${
+                            isDark
+                              ? 'border-2 border-gray-700 bg-gray-900 text-gray-200 hover:bg-gray-800'
+                              : 'border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          Hide
+                        </button>
+                      )}
+                    </>
                 )}
 </div>
                 </div>
@@ -767,7 +785,9 @@ export default function JobsPage() {
                 ) : (
                     <div className="space-y-6 mt-6">
                         {paginatedJobs.map((job) => (
-                            <JobCard key={job.id} job={job} isDark={isDark} />
+                            job.user_id
+                                ? <JobFetchCard key={job.id} jobId={job.id} isDark={isDark} />
+                                : <JobCard key={job.id} job={job} isDark={isDark} />
                         ))}
                     </div>
                 )}

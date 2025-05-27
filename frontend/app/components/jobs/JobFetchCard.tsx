@@ -13,6 +13,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+
 interface JobFetchCardProps {
   jobId: string;
   isDark?: boolean;
@@ -128,12 +129,12 @@ export function JobFetchCard({ jobId, isDark = false, userId }: JobFetchCardProp
   const isOwner = userId && job && job.user_id && userId === job.user_id;
 
   return (
-    <div className={`relative border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${cardBgClass}`}>
-      {/* Delete icon button for owner, top-right */}
+    <div className={`border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${cardBgClass} relative`}>
+      {/* Delete icon button for owner, top-left */}
       {job && isOwner && (
         <button
           onClick={handleDelete}
-          className="absolute top-3 left-0 p-2 rounded-full bg-red-50  hover:bg-red-100 text-red-600 hover:text-red-800 transition-colors"
+          className="absolute top-3 left-0 p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 transition-colors"
           title="Delete Job"
           aria-label="Delete Job"
         >
@@ -142,10 +143,7 @@ export function JobFetchCard({ jobId, isDark = false, userId }: JobFetchCardProp
       )}
       <div className="flex flex-col md:flex-row items-start md:items-center">
         <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-4">
-          <CompanyLogo 
-            company={companyName}
-            logoUrl={logoUrl}
-          />
+          <CompanyLogo company={companyName} logoUrl={logoUrl} />
         </div>
         <div className="flex-1">
           <h3 className={`text-lg font-semibold mb-1 ${titleClass}`}>{job.position}</h3>
@@ -155,13 +153,20 @@ export function JobFetchCard({ jobId, isDark = false, userId }: JobFetchCardProp
             <span className={locationClass}>{job.location || 'Location not specified'}</span>
           </div>
           <div className="flex flex-wrap gap-2 text-sm">
-            {job.primary_tag && (
-              <JobTag text={job.primary_tag} type="blue" isDark={isDark} />
-            )}
+            {Array.isArray(job.tags)
+              ? job.tags.map((tag: string, idx: number) => (
+                  <JobTag key={idx} text={tag} type="blue" isDark={isDark} />
+                ))
+              : typeof job.tags === 'string' && job.tags.split(',').map((tag: string, idx: number) => (
+                  <JobTag key={idx} text={tag.trim()} type="blue" isDark={isDark} />
+                ))}
+            <JobTag text="Competitive" type="green" isDark={isDark} />
           </div>
         </div>
         <div className="flex flex-col items-end mt-4 md:mt-0 self-stretch justify-between w-full md:w-auto">
-          <span className={`text-sm mb-2 md:mb-4 ${postedClass}`}>Posted {formatRelativeTime(Math.floor(new Date(job.created_at).getTime() / 1000))}</span>
+          <span className={`text-sm mb-2 md:mb-4 ${postedClass}`}>
+            Posted {job.created_at ? formatRelativeTime(new Date(job.created_at).getTime()) : 'Unknown'}
+          </span>
           <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
             <button className={`px-4 py-2 rounded transition-colors text-sm font-medium ${applyBtnClass}`}>
               Apply Now
