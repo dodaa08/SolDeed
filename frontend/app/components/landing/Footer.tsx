@@ -6,10 +6,8 @@ import { useTheme } from "next-themes";
 export default function Footer() {
   const [mounted, setMounted] = useState(false);
   
-  // Theme handling
-  const { systemTheme, theme } = useTheme();
-  const currentTheme = theme === 'system' ? systemTheme : theme;
-  const isDark = currentTheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   
   // Mount component on client-side to prevent hydration mismatch
   useEffect(() => {
@@ -17,7 +15,7 @@ export default function Footer() {
   }, []);
   
   // Conditional styling
-  const footerBgClass = mounted && isDark ? "bg-black/120 border-gray-800" : "bg-gray-50 border-gray-200";
+  const footerBgClass = isDark ? "bg-black/120 border-gray-800" : "bg-gray-50 border-gray-200";
   const logoTextClass = mounted && isDark ? "text-blue-400" : "text-blue-600";
   const descriptionClass = mounted && isDark ? "text-gray-400" : "text-gray-600";
   const sectionTitleClass = mounted && isDark ? "text-gray-300" : "text-gray-900";
@@ -170,4 +168,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-} 
+}

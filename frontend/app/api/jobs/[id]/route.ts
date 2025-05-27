@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/app/utils/supabaseClient';
 
+
 function extractIdFromUrl(url: string) {
   // Remove query parameters and hash fragments
   const cleanUrl = url.split('?')[0].split('#')[0];
