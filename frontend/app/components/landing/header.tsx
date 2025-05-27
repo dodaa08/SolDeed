@@ -106,18 +106,29 @@ export default function Header() {
         setMounted(true);
     }, []);
 
+    if (!mounted) return null;
+
+    const isDark = theme === "dark";
+
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);
     };
 
     return (
         <>
-        <header className="bg-white dark:bg-black/120 backdrop-blur-sm border-b border-gray-800 py-4 px-6 sticky top-0 z-50">
+        <header
+          className={
+            (isDark
+              ? "bg-black/120 text-white"
+              : "bg-white text-black") +
+            " backdrop-blur-sm  border-gray-800 py-4 px-6 sticky top-0 z-50"
+          }
+        >
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 {/* Logo */}
                 <Link href="/" className="flex items-center space-x-2">
                     <div className="flex items-center">
-                        <h1 className="text-2xl font-bold text-gray-700 dark:font-semibold dark:bg-gradient-to-r dark:bg-gray-100 dark:bg-clip-text dark:text-transparent">
+                        <h1 className={isDark ? "text-white text-2xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 bg-clip-text text-transparent" : "text-black text-2xl font-bold"}>
                             SolDeed
                         </h1>
                     </div>
@@ -125,7 +136,7 @@ export default function Header() {
 
                 {/* Center Navigation */}
                 <div className="hidden md:flex items-center justify-center space-x-8">
-                    <Link href="/jobs" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-medium transition-colors">
+                    <Link href="/jobs" className={isDark ? "text-white" : "text-black hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-medium transition-colors"}>
                         Jobs
                     </Link>
                     <button
@@ -136,7 +147,7 @@ export default function Header() {
                                 router.push('/post');
                             }
                         }}
-                        className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-medium transition-colors"
+                        className={isDark ? "text-white" : "text-black hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-medium transition-colors"}
                     >
                         Post a Job
                     </button>
@@ -145,10 +156,14 @@ export default function Header() {
                 {/* Right Section */}
                 <div className="flex items-center space-x-4">
                     <button
-                        onClick={() => theme === "dark" ? setTheme("light") : setTheme("dark")}
-                        className="p-2 rounded-lg text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors text-xl"
+                        onClick={() => setTheme(isDark ? "light" : "dark")}
+                        className={
+                          isDark
+                            ? "text-white bg-gray-800 px-4 py-2 rounded"
+                            : "text-black bg-gray-200 px-4 py-2 rounded"
+                        }
                     >
-                        {theme === "dark" ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
+                        {isDark ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
                     </button>
                     { user ? (
                         <>

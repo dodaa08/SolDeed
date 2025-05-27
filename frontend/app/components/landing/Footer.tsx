@@ -7,39 +7,39 @@ export default function Footer() {
   const [mounted, setMounted] = useState(false);
   
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
   
   // Mount component on client-side to prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
   
+  if (!mounted) return null;
+
+  const isDark = theme === 'dark';
+  
   // Conditional styling
   const footerBgClass = isDark ? "bg-black/120 border-gray-800" : "bg-gray-50 border-gray-200";
-  const logoTextClass = mounted && isDark ? "text-blue-400" : "text-blue-600";
-  const descriptionClass = mounted && isDark ? "text-gray-400" : "text-gray-600";
-  const sectionTitleClass = mounted && isDark ? "text-gray-300" : "text-gray-900";
-  const linkClass = mounted && isDark ? "text-gray-400 hover:text-blue-400" : "text-gray-600 hover:text-blue-600";
-  const socialIconClass = mounted && isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-400 hover:text-blue-500";
-  const copyrightClass = mounted && isDark ? "text-gray-500" : "text-gray-500";
-  const footerLinkClass = mounted && isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-500 hover:text-blue-600";
-  const borderClass = mounted && isDark ? "border-gray-800" : "border-gray-200";
+  const logoTextClass = isDark ? "text-blue-400" : "text-blue-600";
+  const descriptionClass = isDark ? "text-gray-400" : "text-gray-600";
+  const sectionTitleClass = isDark ? "text-gray-300" : "text-gray-900";
+  const linkClass = isDark ? "text-gray-400 hover:text-blue-400" : "text-gray-600 hover:text-blue-600";
+  const socialIconClass = isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-400 hover:text-blue-500";
+  const copyrightClass = isDark ? "text-gray-500" : "text-gray-500";
+  const footerLinkClass = isDark ? "text-gray-500 hover:text-blue-400" : "text-gray-500 hover:text-blue-600";
+  const borderClass = isDark ? "border-gray-800" : "border-gray-200";
 
   return (
-    <footer className={`${footerBgClass} border-t py-12`}>
+    <footer className={isDark ? "bg-black/120 text-white py-12" : "bg-gray-50 text-black" + " border-t border-gray-200 dark:border-gray-800 py-12"}>
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and slogan */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center mb-4">
-            <div className="flex items-center">
-                        <h1 className={mounted && isDark 
-                            ? 'text-2xl font-semibold bg-gradient-to-r bg-gray-100 bg-clip-text text-transparent' 
-                            : 'text-2xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 bg-clip-text text-transparent'
-                        }>
-                            SolDeed
-                        </h1>
-                    </div>
+              <div className="flex items-center">
+                <h1 className={isDark ? "text-white" : "text-black"}>
+                  SolDeed
+                </h1>
+              </div>
             </div>
             <p className={`mb-4 ${descriptionClass}`}>
               Connecting blockchain talent with innovative projects on Solana.
