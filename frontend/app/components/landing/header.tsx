@@ -186,7 +186,7 @@ export default function Header() {
                             <Link href="/auth/signin" className={isDark ? "py-2 px-5 rounded-lg font-semibold border-2 border-gray-600 dark:border-gray-700 text-white dark:text-gray-300 hover:bg-gray-900 transition duration-300 text-sm" : "py-2 px-5 rounded-lg font-semibold dark:border-gray-700 text-black transition duration-300 hover:text-gray-700 text-sm"}>
                                 Sign In
                             </Link>
-                            <Link href="/auth/signup" className="py-2 px-5 rounded-lg border-2 border-gray-500 dark:border-gray-700 bg-gray-800 dark:bg-gray-700 text-white font-semibold transition duration-300 text-sm ">
+                            <Link href="/auth/signup" className="py-2 px-5 rounded-lg dark:border-gray-700 bg-gray-700 dark:bg-gray-700 text-white font-semibold transition duration-300 text-sm ">
                                 Create Account
                             </Link>
                         </>
