@@ -9,6 +9,7 @@ import { useSupabaseUser } from "@/app/hooks/useSupabaseUser";
 import { supabase } from "@/app/utils/supabaseClient";
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 
 function getProfileColor(nameOrEmail: string) {
@@ -85,7 +86,7 @@ function ProfileDropdown({ user, onSignOut }: { user: any; onSignOut: any }) {
           </div>
           <button
             onClick={onSignOut}
-            className="w-max px-5 flex justify-center py-1 ml-12 border border-red-500 cursor-pointer text-red-600 rounded-lg font-semibold hover:bg-red-50 transition-colors duration-200"
+            className="w-max px-5 cursor-pointer flex justify-center py-1 ml-12 border border-red-500 cursor-pointer text-red-600 rounded-lg font-semibold hover:bg-red-50 transition-colors duration-200"
           >
             Sign Out
           </button>
@@ -101,6 +102,7 @@ export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const user = useSupabaseUser();
     const router = useRouter();
+    const { connected } = useWallet();
 
     useEffect(() => {
         setMounted(true);
@@ -136,9 +138,18 @@ export default function Header() {
 
                 {/* Center Navigation */}
                 <div className="hidden md:flex items-center justify-center space-x-8">
-                    <Link href="/jobs" className={isDark ? "text-white" : "text-black hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-medium transition-colors"}>
+                    <button
+                        onClick={() => {
+                            if (!user || !connected) {
+                                toast.error('You must be signed in and connected to your wallet to view jobs!');
+                            } else {
+                                router.push('/jobs');
+                            }
+                        }}
+                        className={isDark ? "text-white cursor-pointer" : "cursor-pointer  text-black hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"}
+                    >
                         Jobs
-                    </Link>
+                    </button>
                     <button
                         onClick={() => {
                             if (!user) {
@@ -147,7 +158,7 @@ export default function Header() {
                                 router.push('/post');
                             }
                         }}
-                        className={isDark ? "text-white" : "text-black hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-medium transition-colors"}
+                        className={isDark ? "text-white cursor-pointer" : "cursor-pointer text-black hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"}
                     >
                         Post a Job
                     </button>
@@ -159,8 +170,8 @@ export default function Header() {
                         onClick={() => setTheme(isDark ? "light" : "dark")}
                         className={
                           isDark
-                            ? "text-white bg-gray-800 px-4 py-2 rounded"
-                            : "text-black bg-gray-200 px-4 py-2 rounded"
+                            ? "text-white bg-gray-800 px-4 py-2 rounded cursor-pointer" 
+                            : "text-black bg-gray-200 px-4 py-2 rounded cursor-pointer"
                         }
                     >
                         {isDark ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
@@ -172,10 +183,10 @@ export default function Header() {
                         </>
                     ) : (
                         <>
-                            <Link href="/auth/signin" className={isDark ? "py-2 px-5 rounded-lg font-semibold border-2 border-gray-600 dark:border-gray-700 text-white dark:text-gray-300 hover:bg-gray-900 transition duration-300 text-sm" : "py-2 px-5 rounded-lg font-semibold border-2 border-gray-600 dark:border-gray-700 text-black dark:text-gray-300 hover:bg-gray-900 transition duration-300 text-sm"}>
+                            <Link href="/auth/signin" className={isDark ? "py-2 px-5 rounded-lg font-semibold border-2 border-gray-600 dark:border-gray-700 text-white dark:text-gray-300 hover:bg-gray-900 transition duration-300 text-sm" : "py-2 px-5 rounded-lg font-semibold dark:border-gray-700 text-black transition duration-300 hover:text-gray-700 text-sm"}>
                                 Sign In
                             </Link>
-                            <Link href="/auth/signup" className="py-2 px-5 rounded-lg border-2 border-gray-500 dark:border-gray-700 bg-gray-500 dark:bg-gray-700 text-white font-semibold transition duration-300 text-sm hover:bg-gray-900">
+                            <Link href="/auth/signup" className="py-2 px-5 rounded-lg border-2 border-gray-500 dark:border-gray-700 bg-gray-800 dark:bg-gray-700 text-white font-semibold transition duration-300 text-sm ">
                                 Create Account
                             </Link>
                         </>
@@ -197,10 +208,18 @@ export default function Header() {
             {mobileMenuOpen && (
                 <div className="md:hidden mt-4 py-2 border-t border-gray-200 dark:border-gray-800 bg-white/30 dark:bg-black/30">
                     <nav className="flex flex-col space-y-1">
-                        <Link href="/jobs" 
-                            className="px-4 py-2 text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-blue-600 dark:hover:text-blue-400 font-medium rounded-lg mx-2">
+                        <button
+                            onClick={() => {
+                                if (!user || !connected) {
+                                    toast.error('You must be signed in and connected to your wallet to view jobs!');
+                                } else {
+                                    router.push('/jobs');
+                                }
+                            }}
+                            className="px-4 py-2 text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-blue-600 dark:hover:text-blue-400 font-medium rounded-lg mx-2"
+                        >
                             Browse Jobs
-                        </Link>
+                        </button>
                         <button
                             onClick={() => {
                                 if (!user) {

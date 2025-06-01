@@ -9,6 +9,7 @@ import {
   formatSeniority,
   formatWorkMode
 } from '@/app/utils/formatters';
+import Link from 'next/link';
 
 interface JobCardProps {
   job: Job;
@@ -22,7 +23,7 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
   // Support both data shapes: organization.name/logo_url or company_name/logo
   const companyName = (job as any).organization?.name ?? (job as any).company_name ?? 'Unknown Company';
   const logoUrl = (job as any).organization?.logo_url ?? (job as any).logo ?? '';
-
+  const jobLink = (job as any).url ?? '';
   const cardBgClass = isDark
     ? job.highlighted 
       ? 'bg-blue-900/30 border-blue-700 ring-1 ring-blue-700'
@@ -105,11 +106,13 @@ export function JobCard({ job, isDark = false }: JobCardProps) {
         
         <div className="flex flex-col items-end mt-4 md:mt-0 self-stretch justify-between w-full md:w-auto">
           <span className={`text-sm mb-2 md:mb-4 ${postedClass}`}>Posted {formatRelativeTime(job.created_at)}</span>
-          <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
-            <button className={`px-4 py-2 rounded transition-colors text-sm font-medium ${applyBtnClass}`}>
+       
+            <Link href={`${jobLink}`} target="_blank" rel="noopener noreferrer">
+            <button className={`px-4 py-2 cursor-pointer rounded transition-colors text-sm font-medium ${applyBtnClass}`}>
               Apply Now
             </button>
-          </a>
+            </Link>
+
         </div>
       </div>
     </div>

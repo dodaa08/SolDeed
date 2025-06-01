@@ -7,6 +7,8 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from "next-themes";
+import { useSupabaseUser } from '@/app/hooks/useSupabaseUser';
+import toast from 'react-hot-toast';
 
 interface JobListingsProps {
   jobsState: UseJobsResult;
@@ -131,6 +133,16 @@ export default function JobListings({ jobsState }: JobListingsProps) {
     };
   }, [connected]);
 
+  const user = useSupabaseUser();
+
+  const handleViewAllJobs = () => {
+    if (!user || !isConnected) {
+      toast.error('You must be signed in and connected to your wallet to view jobs.');
+      return;
+    }
+    router.push('/jobs');
+  };
+
   return (
     <div id="job-listings" className={`${sectionBgClass} py-10`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -213,45 +225,19 @@ export default function JobListings({ jobsState }: JobListingsProps) {
         </div>
 
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-6 space-x-2">
-            <button
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-              className="px-3 py-1 rounded border disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span>Page {page} of {totalPages}</span>
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={page === totalPages}
-              className="px-3 py-1 rounded border disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        )}
+       
 
         {/* View More Button */}
         {sortedJobs.length > 10 && (
           <div className="mt-8 text-center">
             <button 
-              onClick={isConnected ? viewMoreJobs : handleConnectWallet}
+              onClick={handleViewAllJobs}
               className={`px-8 py-3 rounded-lg font-medium cursor-pointer ${viewMoreBtnClass} transition-colors flex items-center justify-center mx-auto`}
             >
-              {isConnected ? (
-                <>
-                 <Link href="/jobs" className='flex items-center'>
-                    View All Jobs
-                    <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                 </Link>
-                </>
-              ) : (
-                'Connect Wallet to View All Jobs'
-              )}  
+              View All Jobs
+              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </button>
           </div>
         )}
